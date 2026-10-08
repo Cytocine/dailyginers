@@ -59,12 +59,20 @@ section{display:flex;flex-direction:column;min-width:0;min-height:0;position:rel
 .chead button{padding:2px 8px;font-size:12px}.mi{color:var(--mute);font-size:12px}
 .cbody{flex:1;min-height:0;position:relative}
 .settings{display:contents}
-.mob{display:none}
+.mob,.chips,.dock{display:none}
 button,select,input{touch-action:manipulation}
 body{height:100dvh;overscroll-behavior:none;-webkit-text-size-adjust:100%}
 header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-top:max(10px,env(safe-area-inset-top))}
-@media(max-width:800px){
+.chips{position:relative;gap:6px;overflow-x:auto;padding:6px 10px;border-bottom:1px solid var(--line);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:6px 12px;border-radius:16px;font-weight:600;font-size:13px}
+.chip.sel{background:var(--accent);color:#10151c;border-color:var(--accent)}
+.dock{gap:6px;padding:6px 10px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel)}
+.dock button{flex:1 1 0;min-height:44px;font-size:16px;padding:4px 6px}
+.dock button.on{background:var(--accent);color:#10151c;border-color:var(--accent)}
+@media (max-width:800px),(max-height:500px) and (orientation:landscape){
   .mob{display:inline-block}
+  .chips,.dock{display:flex}
   header{gap:8px;padding-bottom:8px}
   #status{margin-left:0;width:100%;order:9;font-size:11px}
   .settings{display:none;width:100%}
@@ -75,21 +83,23 @@ header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,e
   .flt{flex-wrap:wrap}.flt input[type=text],.flt input[type=number]{width:64px}
   input,select{font-size:16px}
   button{min-height:36px}
-  main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(120px,26%) minmax(0,1fr)}
-  aside{border-right:0;border-bottom:1px solid var(--line)}
-  td{padding:10px}
-  .bar{gap:6px;padding:8px 10px}
+  main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+  aside{display:none}
+  .bar{gap:6px;padding:6px 10px}
   .title{font-size:16px;margin-right:4px}
   .tf,.tools{width:100%;margin-left:0;flex-wrap:nowrap;overflow-x:auto}
   .tf{order:2}.tools{order:3;display:none}.bar.draw .tools{display:flex}
   .tf button,.tools button{flex:0 0 auto}
-  #chart{min-height:200px}
+  #addm{display:none}
+  #chart{min-height:160px}
   #mgrid{grid-template-columns:minmax(0,1fr)}.cell{height:300px}
   #mcols{display:none}#msym{flex:1;min-width:0}
 }
-@media(max-height:500px) and (orientation:landscape){
-  main{grid-template-columns:150px minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
-  aside{border-right:1px solid var(--line);border-bottom:0}
+@media (max-height:500px) and (orientation:landscape){
+  header{padding-top:4px;padding-bottom:4px}
+  .chips{padding:3px 10px}.chip{padding:3px 10px;min-height:28px}
+  .bar{flex-wrap:nowrap;padding:4px 10px}.tf{width:auto;margin-left:auto}
+  .dock{padding:3px 10px}.dock button{min-height:32px}
 }
 </style>
 </head>
@@ -122,13 +132,22 @@ header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,e
     </table>
   </aside>
   <section>
+    <div class="chips" id="chips"></div>
     <div class="bar">
       <span class="title" id="ctitle">Select a symbol</span>
-      <span id="cinfo"></span><button id="prevS" class="mob" aria-label="Previous symbol">‹</button><button id="nextS" class="mob" aria-label="Next symbol">›</button>
-      <div class="tools" id="tools"></div><button id="addm">+ Multi</button><button id="drawbtn" class="mob">✎ Draw</button>
+      <span id="cinfo"></span>
+      <div class="tools" id="tools"></div><button id="addm">+ Multi</button>
       <div class="tf" id="tfs"></div>
     </div>
     <div id="chart"></div><div id="cmsg" class="msg" style="position:absolute;left:0;right:0;bottom:40%;text-align:center;pointer-events:none"></div>
+    <div class="dock" id="dock">
+      <button id="prevS" aria-label="Previous symbol">⏮</button>
+      <button id="play" aria-label="Play or pause auto-advance">▶</button>
+      <button id="nextS" aria-label="Next symbol">⏭</button>
+      <button id="spd" aria-label="Seconds per stock">10s</button>
+      <button id="addm2" aria-label="Add to multi-chart">＋ Multi</button>
+      <button id="drawbtn" aria-label="Drawing tools">✎</button>
+    </div>
   </section>
 </main>
 <div id="multi" hidden>
@@ -157,7 +176,8 @@ if(typeof LightweightCharts==='undefined'){
   $('chart').innerHTML='<div class="msg">Chart library failed to load. Try reloading the page.</div>';
   throw new Error('lightweight-charts not loaded');
 }
-let showInd=true,showDays=true,trendCandles=true,showSig=true;const PANES=[];
+let showInd=true,showDays=true,trendCandles=true,showSig=true;
+const MOBQ='(max-width:800px),(max-height:500px) and (orientation:landscape)',isMob=()=>matchMedia(MOBQ).matches,VIS_MOB=70;const PANES=[];
 const tnum=t=>typeof t==='number'?t:Date.parse(t+'T00:00:00Z')/1000;
 const FIB=[0,0.236,0.382,0.5,0.618,0.786,1];
 const CLOUD={1:'rgba(14,187,35,.22)','-1':'rgba(255,50,50,.22)',0:'rgba(140,140,140,.18)'};
@@ -233,7 +253,7 @@ class Pane{
     this.av.setData(bars.map((b,i)=>{const a=this.ind.avwap[i];return a>0?{time:b.time,value:a,color:b.close>a?'#2fd3a0':b.close<a?'#f5222d':'#999999'}:{time:b.time}}));
     this.av.applyOptions({visible:showInd});
     this.markCross();
-    if(fit)this.chart.timeScale().fitContent();
+    if(fit){const n=bars.length;if(isMob()&&n>VIS_MOB)this.chart.timeScale().setVisibleLogicalRange({from:n-VIS_MOB,to:n+4});else this.chart.timeScale().fitContent()}
     this.sig='';
   }
   // candle colour follows trend: bull (EMA13 > AVWAP) = green, otherwise red; up candles hollow, down candles filled
@@ -395,17 +415,21 @@ function renderRows(){
   if(order&&order===lastOrder){
     // same rows in same order: only touch price cells + selection, scroll position untouched
     const trs=$('rows').children;
-    list.forEach((g,i)=>{const tr=trs[i];if(!tr)return;const c=tr.children[1],v=fmt(g.price);if(c.textContent!==v)c.textContent=v;tr.classList.toggle('sel',g.symbol===sel)});
+    list.forEach((g,i)=>{const tr=trs[i];if(!tr)return;const c=tr.children[1],v=fmt(g.price);if(c.textContent!==v)c.textContent=v;tr.classList.toggle('sel',g.symbol===sel);const ch=$('chips').children[i];if(ch)ch.classList.toggle('sel',g.symbol===sel)});
   }else{
     const st=side.scrollTop;
     $('rows').innerHTML=list.map(g=>`<tr class="row ${g.symbol===sel?'sel':''}" data-s="${g.symbol}"><td><span class="sym">${g.symbol}</span></td><td>${fmt(g.price)}</td></tr>`).join('')
       ||'<tr><td colspan="2" class="msg">No results. Loosen the filter.</td></tr>';
     side.scrollTop=st;lastOrder=order;
+    const cs=$('chips'),cl=cs.scrollLeft;
+    cs.innerHTML=list.map(g=>`<button class="chip${g.symbol===sel?' sel':''}" data-s="${g.symbol}">${g.symbol}</button>`).join('')||'<span class="mi">No hits</span>';
+    cs.scrollLeft=cl;
   }
   $('flt-note').textContent=!haveA&&(on||fb)?'RVOL / trend filters need Alpaca keys':(fb&&!trendReady?'Scanning trend…':`${list.length}/${gainers.length} shown`);
 }
 
-function select(s){sel=s;renderRows();loadChart()}
+function select(s){sel=s;renderRows();centerChip();syncMulti();loadChart()}
+function centerChip(){const c=$('chips'),b=c.querySelector('.chip.sel');if(b)c.scrollTo({left:b.offsetLeft-(c.clientWidth-b.offsetWidth)/2,behavior:'smooth'})}
 
 const ALP={'1min':'1Min','5min':'5Min','15min':'15Min','30min':'30Min','1hour':'1Hour','4hour':'4Hour','eod':'1Day'};
 const DAYS={'1min':3,'5min':10,'15min':30,'30min':30,'1hour':90,'4hour':365,'eod':730};
@@ -544,10 +568,10 @@ async function loadChart(){
 main.onTool=t=>[...$('tools').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t));
 main.onTool('cursor');
 document.addEventListener('keydown',e=>{if(e.key==='Escape')main.setTool('cursor')});
-function stepSel(d){
+function stepSel(d,wrap=false){
   const trs=[...$('rows').querySelectorAll('tr.row')];if(!trs.length)return;
   let i=trs.findIndex(t=>t.dataset.s===sel);
-  i=i<0?0:Math.max(0,Math.min(trs.length-1,i+d));
+  i=i<0?0:wrap?(i+d+trs.length)%trs.length:Math.max(0,Math.min(trs.length-1,i+d));
   select(trs[i].dataset.s);trs[i].scrollIntoView({block:'nearest'});
 }
 document.addEventListener('keydown',e=>{
@@ -555,8 +579,17 @@ document.addEventListener('keydown',e=>{
   if(tab!=='g'||/^(INPUT|SELECT|TEXTAREA)$/.test((e.target.tagName||'')))return;
   e.preventDefault();stepSel(e.key==='ArrowDown'?1:-1);
 });
-$('prevS').onclick=()=>stepSel(-1);$('nextS').onclick=()=>stepSel(1);
-$('drawbtn').onclick=()=>{const o=$('drawbtn').closest('.bar').classList.toggle('draw');if(!o)main.setTool('cursor')};
+// auto-advance through the hit list (play / pause), screen stays awake while playing
+let playing=false,playT=null,speed=+store.get('pspeed')||10,wl=null;
+async function wake(on){try{if(on&&'wakeLock' in navigator)wl=await navigator.wakeLock.request('screen');else if(wl){await wl.release();wl=null}}catch{}}
+document.addEventListener('visibilitychange',()=>{if(playing&&!document.hidden)wake(true)});
+function restartPlay(){clearInterval(playT);if(playing)playT=setInterval(()=>{if(!document.hidden&&tab==='g')stepSel(1,true)},speed*1000)}
+$('spd').textContent=speed+'s';
+$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'⏸':'▶';$('play').classList.toggle('on',playing);restartPlay();wake(playing)};
+$('spd').onclick=()=>{const L=[5,10,20,30];speed=L[(L.indexOf(speed)+1)%L.length];store.set('pspeed',speed);$('spd').textContent=speed+'s';restartPlay()};
+$('prevS').onclick=()=>{stepSel(-1);restartPlay()};$('nextS').onclick=()=>{stepSel(1);restartPlay()};
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(b){select(b.dataset.s);restartPlay()}};
+$('drawbtn').onclick=()=>{const o=document.querySelector('section .bar').classList.toggle('draw');$('drawbtn').classList.toggle('on',o);if(!o)main.setTool('cursor')};
 $('gear').onclick=()=>{const o=document.querySelector('header').classList.toggle('open');$('gear').setAttribute('aria-expanded',o)};
 $('days').value=store.get('days')||'3';
 $('days').onchange=()=>{store.set('days',$('days').value);if(tab==='m')loadMulti();else if(sel)loadChart();loadTrend(true)};
@@ -580,7 +613,7 @@ function mkCell(sym){
   $('mgrid').appendChild(d);
   cells[sym]={el:d,pane:new Pane(d.querySelector('.cbody')),mi:d.querySelector('.mi')};
   d.onclick=e=>{const a=e.target.dataset.a;
-    if(a==='rm'){msyms=msyms.filter(s=>s!==sym);store.set('multi',JSON.stringify(msyms));const i=PANES.indexOf(cells[sym].pane);if(i>=0)PANES.splice(i,1);d.remove();delete cells[sym]}
+    if(a==='rm'){msyms=msyms.filter(s=>s!==sym);store.set('multi',JSON.stringify(msyms));const i=PANES.indexOf(cells[sym].pane);if(i>=0)PANES.splice(i,1);d.remove();delete cells[sym];syncMulti()}
     if(a==='open'){showTab('g');select(sym)}};
 }
 function buildMulti(){
@@ -602,12 +635,26 @@ async function loadMulti(){
 function addSym(){
   const s=$('msym').value.trim().toUpperCase();$('msym').value='';
   if(!/^[A-Z][A-Z.\-]{0,9}$/.test(s)||msyms.includes(s))return;
-  msyms.push(s);store.set('multi',JSON.stringify(msyms));buildMulti();
+  msyms.push(s);store.set('multi',JSON.stringify(msyms));buildMulti();syncMulti();
 }
 $('tabG').onclick=()=>showTab('g');$('tabM').onclick=()=>showTab('m');
 $('madd').onclick=addSym;$('msym').onkeydown=e=>{if(e.key==='Enter')addSym()};
 $('mtf').onchange=loadMulti;$('mcols').onchange=buildMulti;$('mrefresh').onclick=loadMulti;
-$('addm').onclick=()=>{if(sel&&!msyms.includes(sel)){msyms.push(sel);store.set('multi',JSON.stringify(msyms))}$('addm').textContent='Added ✓';setTimeout(()=>$('addm').textContent='+ Multi',1200)};
+function syncMulti(){
+  const has=!!sel&&msyms.includes(sel);
+  $('addm').textContent=has?'✓ Multi':'+ Multi';$('addm2').textContent=has?'✓ Multi':'＋ Multi';
+  $('addm2').classList.toggle('on',has);
+  $('tabM').textContent='Multi-chart'+(msyms.length?' ('+msyms.length+')':'');
+}
+function toggleMulti(){
+  if(!sel)return;
+  if(msyms.includes(sel)){
+    msyms=msyms.filter(x=>x!==sel);
+    const c=cells[sel];if(c){const i=PANES.indexOf(c.pane);if(i>=0)PANES.splice(i,1);c.el.remove();delete cells[sel]}
+  }else msyms.push(sel);
+  store.set('multi',JSON.stringify(msyms));syncMulti();
+}
+$('addm').onclick=toggleMulti;$('addm2').onclick=toggleMulti;syncMulti();
 
 // events
 $('rows').onclick=e=>{const tr=e.target.closest('tr.row');if(tr)select(tr.dataset.s)};
