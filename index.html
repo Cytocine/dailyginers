@@ -35,6 +35,7 @@ main{flex:1;display:grid;grid-template-columns:240px minmax(0,1fr);grid-template
 #mainview.w{grid-template-columns:410px minmax(0,1fr)}
 #mainview.w th,#mainview.w td{padding:6px 5px;font-size:12px}
 tr.grp td{background:#1a2432;color:var(--mute);font-size:11px;letter-spacing:.04em;text-transform:uppercase;text-align:left;cursor:pointer;user-select:none;padding:5px 8px}
+tr.grp.col td{opacity:.65}tr.grp .sgt{float:right;font-size:12px;padding:0 4px}tr.grp:hover td{color:var(--text)}
 .amb{color:var(--accent)}
 aside{border-right:1px solid var(--line);overflow:auto;background:var(--panel)}
 table{width:100%;border-collapse:collapse}
@@ -492,17 +493,17 @@ let WTAG={};try{WTAG=JSON.parse(store.get('wtags')||'null')||{}}catch{}
 
 let SEC={};try{SEC=JSON.parse(store.get('wsec')||'null')||{}}catch{}
 const secTried=new Set(),secOf=s=>WTAG[s]||SEC[s]||'Other';
-let COLL=new Set();try{COLL=new Set(JSON.parse(store.get('wcoll')||'[]'))}catch{}
-const saveColl=()=>store.set('wcoll',JSON.stringify([...COLL]));
 let HIDS=new Set(),HIDSEC=new Set(),compactView=store.get('wview')!=='table';
 try{HIDS=new Set(JSON.parse(store.get('whide')||'[]'))}catch{}
 try{HIDSEC=new Set(JSON.parse(store.get('wsechide')||'[]'))}catch{}
+let COLSEC=new Set();try{COLSEC=new Set(JSON.parse(store.get('wseccol')||'[]'))}catch{}
+const saveCol=()=>store.set('wseccol',JSON.stringify([...COLSEC]));
 const saveHid=()=>{store.set('whide',JSON.stringify([...HIDS]));store.set('wsechide',JSON.stringify([...HIDSEC]))};
 function updHidBtn(){const n=WLS.filter(s=>HIDS.has(s)).length,b=$('wunhide');b.hidden=!n;b.textContent='Show hidden ('+n+')'}
 function buildSecPanel(){
   const cnt={};WLS.forEach(s=>{const k=secOf(s);cnt[k]=(cnt[k]||0)+1});
   const ks=Object.keys(cnt).sort((a,b)=>a.localeCompare(b));
-  $('secpanel').innerHTML='<div class="sp-top"><button data-sa="all">All</button><button data-sa="none">None</button><button data-sa="collapse" title="Collapse every sector group">Collapse</button><button data-sa="expand" title="Expand every sector group">Expand</button></div>'+ks.map(k=>`<label><input type="checkbox" data-sec="${escH(k)}"${HIDSEC.has(k)?'':' checked'}> ${escH(k)} <small>${cnt[k]}</small></label>`).join('');
+  $('secpanel').innerHTML='<div class="sp-top"><button data-sa="all">All</button><button data-sa="none">None</button></div>'+ks.map(k=>`<label><input type="checkbox" data-sec="${escH(k)}"${HIDSEC.has(k)?'':' checked'}> ${escH(k)} <small>${cnt[k]}</small></label>`).join('');
   const off=ks.filter(k=>HIDSEC.has(k)).length;$('wsec').textContent='Sectors'+(off?` (${ks.length-off}/${ks.length})`:'');
 }
 // sectors: your own tag (NVDA:Semis in Edit watchlist) wins; otherwise looked up once from FMP and cached
@@ -602,11 +603,11 @@ function renderRows(){
   let list=(W?WLS.filter(sy=>!HIDS.has(sy)&&!HIDSEC.has(secOf(sy))).map(sy=>{const g=gainers.find(x=>x.symbol===sy);return g?{...g,gain:true}:{symbol:sy,price:trend[sy]?trend[sy].last:NaN}}):gainers)
     .filter(g=>W?((!wg||g.gain)&&(!$('wmom').checked||!haveA||!m30Ready||momOK(g.symbol))&&(!wo||!haveA||!trendReady||(buyOf(g)!=null&&buyOf(g)<wn))):(baseOK(g)&&(!fb||!haveA||!trendReady||(trend[g.symbol]&&trend[g.symbol].bull))&&(!fy||!haveA||!trendReady||(buyOf(g)!=null&&buyOf(g)<bn))))
     .sort((a,b)=>{const x=val(a),y=val(b);const r=typeof x==='string'?sortDir*x.localeCompare(y):sortDir*(x-y);if(r||!W)return r;const bk=q=>trend[q.symbol]&&trend[q.symbol].buy!=null?trend[q.symbol].buy:999;return sortK==='buy'?chgOf(b)-chgOf(a):bk(a)-bk(b)});
-  const hdr={};const collapsed=g=>W&&$('wgrp').checked&&COLL.has(secOf(g.symbol));
+  const hdr={},hdr_on=W&&$('wgrp').checked;
   if(W&&$('wgrp').checked&&list.length){
     const gm=new Map();list.forEach(g=>{const k=secOf(g.symbol);if(!gm.has(k))gm.set(k,[]);gm.get(k).push(g)});
     const gs=[...gm.entries()].map(([k,a])=>{const cs=a.map(chgOf).filter(c=>c>-999);return{k,a,avg:cs.length?cs.reduce((x,y)=>x+y,0)/cs.length:-999,buys:a.filter(g=>buyOf(g)!=null).length}}).sort((x,y)=>y.avg-x.avg);
-    list=gs.flatMap(o=>{hdr[o.a[0].symbol]=`<tr class="grp" data-g="${escH(o.k)}"><td colspan="7">${COLL.has(o.k)?'▸':'▾'} ${escH(o.k)} · ${o.a.length} · ${o.avg>-999?(o.avg>=0?'+':'')+o.avg.toFixed(1)+'%':'–'}${o.buys?' · '+o.buys+' BUY':''}</td></tr>`;return o.a});
+    list=gs.flatMap(o=>{hdr[o.a[0].symbol]=`<tr class="grp${COLSEC.has(o.k)?' col':''}" data-sg="${escH(o.k)}" title="Click to ${COLSEC.has(o.k)?'expand':'collapse'}"><td colspan="7"><span class="sgt">${COLSEC.has(o.k)?'▸':'▾'}</span>${escH(o.k)} · ${o.a.length} · ${o.avg>-999?(o.avg>=0?'+':'')+o.avg.toFixed(1)+'%':'–'}${o.buys?' · '+o.buys+' BUY':''}</td></tr>`;return o.a});
   }
   if(W){buildSecPanel();updHidBtn()}
   const side=document.querySelector('aside'),order=list.map(g=>g.symbol).join(',');
@@ -620,10 +621,10 @@ function renderRows(){
       const tip=g=>{const t=trend[g.symbol],h=htf[g.symbol];return g.symbol+' '+chgCell(g)+(t&&t.buy!=null?' · BUY '+(t.buy===0?'now':t.buy+' bars ago'):'')+(t&&t.gap>-999?' · gap '+gapCell(g.symbol):'')+(riskOf(g.symbol)<999?' · risk '+riskOf(g.symbol).toFixed(1)+'%':'')+(h?' · HTF '+(h.bull?'✓':'✗'):'')};
       const chip=g=>{const c=chgOf(g),cs=c<=-999?'–':(c>=0?'+':'')+c.toFixed(1);return `<span class="cc ${c>=0?'u':'d'}${g.symbol===sel?' sel':''}" data-s="${g.symbol}" title="${escH(tip(g))}"><b>${g.symbol}</b><i class="${c>=0?'up':'down'}">${cs}</i><span class="xb" data-x="${g.symbol}" title="Hide ${g.symbol}">✕</span></span>`};
       let h='',cur=[];const flush=()=>{if(cur.length)h+=`<tr><td colspan="7" class="cw"><div class="cgrid">${cur.map(chip).join('')}</div></td></tr>`;cur=[]};
-      list.forEach(g=>{if(hdr[g.symbol]){flush();h+=hdr[g.symbol]}if(!collapsed(g))cur.push(g)});flush();
+      list.forEach(g=>{if(hdr[g.symbol]){flush();h+=hdr[g.symbol]}if(!(hdr_on&&COLSEC.has(secOf(g.symbol))))cur.push(g)});flush();
       $('rows').innerHTML=h||'<tr><td colspan="7" class="msg">No results. Loosen the filter.</td></tr>';
     }else
-    $('rows').innerHTML=list.map(g=>`${hdr[g.symbol]||''}${collapsed(g)?'':`<tr class="row ${g.symbol===sel?'sel':''}" data-s="${g.symbol}"><td><span class="sym">${g.symbol}</span>${W?'':buyTag(g.symbol)}</td>${W?'':`<td>${px(g.price)}</td>`}${W?`<td class="${chgOf(g)>=0?'up':'down'}">${chgCell(g)}</td><td class="up">${barsCell(g.symbol)}</td><td>${htfCell(g.symbol)}</td><td>${gapCell(g.symbol)}</td><td>${riskCell(g.symbol)}</td><td class="xc"><button class="xb" data-x="${g.symbol}" title="Hide ${g.symbol}" aria-label="Hide ${g.symbol}">✕</button></td>`:''}</tr>`}`).join('')
+    $('rows').innerHTML=list.map(g=>`${hdr[g.symbol]||''}${hdr_on&&COLSEC.has(secOf(g.symbol))?'':`<tr class="row ${g.symbol===sel?'sel':''}" data-s="${g.symbol}"><td><span class="sym">${g.symbol}</span>${W?'':buyTag(g.symbol)}</td>${W?'':`<td>${px(g.price)}</td>`}${W?`<td class="${chgOf(g)>=0?'up':'down'}">${chgCell(g)}</td><td class="up">${barsCell(g.symbol)}</td><td>${htfCell(g.symbol)}</td><td>${gapCell(g.symbol)}</td><td>${riskCell(g.symbol)}</td><td class="xc"><button class="xb" data-x="${g.symbol}" title="Hide ${g.symbol}" aria-label="Hide ${g.symbol}">✕</button></td>`:''}</tr>`}`).join('')
       ||'<tr><td colspan="7" class="msg">No results. Loosen the filter.</td></tr>';
     side.scrollTop=st;lastOrder=order;
     const cs=$('chips'),cl=cs.scrollLeft;
@@ -898,12 +899,11 @@ $('addm').onclick=toggleMulti;$('addm2').onclick=toggleMulti;syncMulti();
 
 // events
 $('rows').onclick=e=>{
+  const sg=e.target.closest('tr.grp[data-sg]');if(sg){const k=sg.dataset.sg;COLSEC.has(k)?COLSEC.delete(k):COLSEC.add(k);saveCol();lastOrder='';renderRows();return}
   const x=e.target.closest('.xb');
   if(x){const s=x.dataset.x;HIDS.add(s);saveHid();lastOrder='';
     if(sel===s){const trs=[...$('rows').querySelectorAll('[data-s]')],i=trs.findIndex(t=>t.dataset.s===s),nx=trs[i+1]||trs[i-1];sel=nx&&nx.dataset.s!==s?nx.dataset.s:null;if(sel){select(sel);return}}
     renderRows();return}
-  const gh=e.target.closest('tr.grp[data-g]');
-  if(gh){const k=gh.dataset.g;COLL.has(k)?COLL.delete(k):COLL.add(k);saveColl();lastOrder='';renderRows();return}
   const tr=e.target.closest('#rows [data-s]');if(tr)select(tr.dataset.s)};
 $('wmom').onchange=()=>{lastOrder='';m30Ready=false;renderRows();loadM30()};$('wmc').oninput=()=>{lastOrder='';renderRows()};
 function applyView(){$('wview').textContent=compactView?'Table':'Chips';$('wview').title=compactView?'Switch to the full table':'Switch to compact chips';$('mainview').classList.toggle('wc',tab==='w'&&compactView)}
@@ -913,7 +913,6 @@ function posSec(){const r=$('wsec').getBoundingClientRect(),p=$('secpanel');p.st
 $('wsec').onclick=e=>{e.stopPropagation();const p=$('secpanel');p.hidden=!p.hidden;if(!p.hidden){buildSecPanel();posSec()}};
 $('secpanel').onclick=e=>{e.stopPropagation();
   const a=e.target.dataset.sa;
-  if(a==='collapse'||a==='expand'){COLL=a==='collapse'?new Set(WLS.map(secOf)):new Set();saveColl();lastOrder='';renderRows();return}
   if(a){const ks=[...new Set(WLS.map(secOf))];HIDSEC=a==='all'?new Set():new Set(ks);saveHid();lastOrder='';renderRows();posSec();return}
   const k=e.target.dataset.sec;if(k===undefined)return;
   e.target.checked?HIDSEC.delete(k):HIDSEC.add(k);saveHid();lastOrder='';renderRows()};
