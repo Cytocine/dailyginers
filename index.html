@@ -119,14 +119,28 @@ header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,e
 #secpanel label{display:flex;align-items:center;gap:8px;padding:4px 2px;color:var(--text);font-size:13px;white-space:nowrap}#secpanel small{color:var(--mute);margin-left:auto}
 #secpanel .sp-top{display:flex;gap:6px;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:4px}
 .xc{width:26px;padding:2px 4px!important}.xb{background:none;border:0;color:var(--mute);padding:2px 6px;min-height:0;font-size:12px;border-radius:4px}.xb:hover{color:var(--down);background:#2a1a1f}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+:focus-visible{outline:2px solid #5aa9ff;outline-offset:2px}
+:root.hc{--mute:#c5d0de;--line:#5b6c82;--text:#fff}
+.rg{padding:3px 8px;border-radius:6px;border:1px solid var(--line);font-size:12px}.rg.on{border-color:var(--up)}.rg.mx{border-color:var(--accent)}.rg.off{border-color:var(--down)}
+.cc.wk,tr.row.wk{opacity:.5}
+.wc tr.grp td{position:sticky;top:0;z-index:2}
+#jd{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;max-width:min(920px,95vw)}#jd table{width:100%;border-collapse:collapse;margin-bottom:12px}#jd td,#jd th{text-align:left;padding:4px 8px;font-size:13px;border-bottom:1px solid var(--line)}#jd h3{margin:10px 0 4px;font-size:14px}
+@media (pointer:coarse){.xb{padding:10px 12px;font-size:15px}.cc{min-height:42px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
 <header>
   <div class="tabs"><button id="tabG" class="on">Gainers</button><button id="tabW">Scanner</button><button id="tabM">Multi-chart</button></div>
   <button id="refresh">Refresh</button>
+  <span id="regime" class="rg" role="status" aria-live="polite">Regime: –</span>
+  <label title="Dim BUY signals when SPY and QQQ are both bearish, or during open volatility / midday chop / pre- and after-hours"><input id="dimw" type="checkbox" checked> Dim weak setups</label>
+  <button id="jbtn" title="Signal journal: every BUY logged with outcomes">Journal</button>
+  <span role="group" aria-label="Display accessibility"><button id="fsm" aria-label="Smaller sidebar text">A−</button><button id="fbg" aria-label="Larger sidebar text">A+</button><button id="hcb" aria-pressed="false" title="High contrast">Contrast</button></span>
+  <div id="live" class="sr" aria-live="polite"></div>
   <button id="gear" aria-expanded="false" title="Show/hide the settings & filter panels">⚙ Settings</button>
-  <span id="wsecbar" hidden><button id="wview" title="Switch between compact chips and the full table">Table</button> <span class="secwrap"><button id="wsec">Sectors</button><div id="secpanel" hidden></div></span> <button id="wunhide" hidden>Show hidden</button></span>
+  <span id="wsecbar" hidden><button id="wview" title="Switch between compact chips and the full table">Table</button> <span class="secwrap"><button id="wsec">Sectors</button><div id="secpanel" hidden></div></span> <button id="colall" title="Collapse all sectors">Collapse all</button> <button id="expall" title="Expand all sectors">Expand all</button> <button id="wunhide" hidden>Show hidden</button></span>
   <div class="settings">
   <input id="key" type="password" placeholder="FMP API key" aria-label="FMP API key" size="26">
   <input id="akey" type="password" placeholder="Alpaca key ID (for charts)" aria-label="Alpaca key ID" size="22">
@@ -464,7 +478,7 @@ async function loadGainers(force=false){
 }
 
 const volM={};let volErr='';
-const DEF_WL='AA,AAL,ABBV,ABT,ACB,ACN,ADBE,ADSK,AFRM,AGNC,ALHC,AMD,AMZN,APP,ARM,ASPI,ASTS,AVDL,AXON,B,BA,BABA,BAC,BAM,BE,BMY,BULL,C,CARR,CAVA,CC,CCJ,CCL,CELH,CHWY,CLMT,CLOV,CLSK,CMG,CNQ,CORZ,COST,COTY,CPNG,CRM,CRML,CRWD,CRWV,CVNA,CVS,DAR,DBX,DELL,DJT,DKNG,DOW,EBAY,ENPH,ENR,EQX,EXE,F,FCX,FDX,FSLR,GILD,GILT,GM,GME,GOOG,GOOGL,HIMS,HOOD,HPE,HPQ,HUT,INTC,IQ,IREN,IWM,JBLU,JD,JMIA,JNJ,JPM,KHC,KMI,KO,KSS,LLY,LOW,LULU,LUV,LVS,LYFT,MARA,MBLY,MBOT,META,MNDY,MO,MRK,MRVL,MSFT,MU,NEE,NEXT,NFLX,NIO,NKE,NU,NVDA,ONDS,OPEN,OWL,OXY,PBR,PCG,PDD,PEP,PFE,PG,PGEN,PINS,PLTR,PSKY,QBTS,QCOM,QD,QQQ,QS,RELY,RGTI,RIOT,RIVN,RKT,ROKU,RTX,SATS,SBUX,SERV,SLV,SMCI,SNAP,SOFI,SOUN,SPY,T,TCOM,TDOC,TEVA,TGT,TIGR,TMUS,TNA,TRMD,TSLA,TTD,U,UAL,UBER,UPS,UPST,VALE,VZ,WDC,WMT,WULF,XLE,XLF,XOM,XPEV,Z';
+const DEF_WL='AA,AAL,ABBV,ABT,ACB,ACN,ADBE,ADSK,AFRM,AGNC,ALHC,AMD,AMZN,APP,ARM,ASPI,ASTS,AXON,B,BA,BABA,BAC,BE,BMY,BULL,C,CARR,CAVA,CC,CCJ,CCL,CELH,CHWY,CLMT,CLOV,CLSK,CMG,CNQ,CORZ,COST,CRM,CRML,CRWD,CRWV,CVNA,CVS,DAR,DBX,DELL,DJT,DKNG,DOW,EBAY,ENPH,ENR,EQX,EXE,F,FCX,FDX,FSLR,GILD,GILT,GM,GME,GOOG,GOOGL,HIMS,HOOD,HPE,HPQ,HUT,INTC,IQ,IREN,IWM,JBLU,JD,JMIA,JNJ,JPM,KHC,KMI,KO,KSS,LLY,LOW,LULU,LUV,LVS,LYFT,MARA,MBLY,META,MNDY,MO,MRK,MRVL,MSFT,MU,NEE,NFLX,NIO,NVDA,ONDS,OPEN,OXY,PBR,PDD,PEP,PFE,PG,PGEN,PLTR,PSKY,QBTS,IONQ,QCOM,QD,QQQ,QS,RELY,RGTI,RIOT,RIVN,RKT,ROKU,RTX,SATS,SBUX,SLV,SMCI,SOFI,SOUN,SPY,T,TCOM,TEVA,TGT,TMUS,TRMD,TSLA,TTD,U,UAL,UBER,UPS,UPST,VALE,VZ,WDC,WMT,WULF,XLE,XLF,XOM,Z';
 let WLS=[];try{WLS=JSON.parse(store.get('wlist')||'null')}catch{}
 // one-time switch to the new static watchlist (later edits via Edit watchlist are kept)
 if(store.get('wlver')!=='2'){WLS=DEF_WL.split(',');store.set('wlist',JSON.stringify(WLS));store.set('wtags','{}');store.set('whide','[]');store.set('wlver','2')}
@@ -496,6 +510,7 @@ const secTried=new Set(),secOf=s=>WTAG[s]||SEC[s]||'Other';
 let HIDS=new Set(),HIDSEC=new Set(),compactView=store.get('wview')!=='table';
 try{HIDS=new Set(JSON.parse(store.get('whide')||'[]'))}catch{}
 try{HIDSEC=new Set(JSON.parse(store.get('wsechide')||'[]'))}catch{}
+let REG={weak:false,txt:'',rl:'',ph:''};
 let COLSEC=new Set();try{COLSEC=new Set(JSON.parse(store.get('wseccol')||'[]'))}catch{}
 const saveCol=()=>store.set('wseccol',JSON.stringify([...COLSEC]));
 const saveHid=()=>{store.set('whide',JSON.stringify([...HIDS]));store.set('wsechide',JSON.stringify([...HIDSEC]))};
@@ -607,7 +622,7 @@ function renderRows(){
   if(W&&$('wgrp').checked&&list.length){
     const gm=new Map();list.forEach(g=>{const k=secOf(g.symbol);if(!gm.has(k))gm.set(k,[]);gm.get(k).push(g)});
     const gs=[...gm.entries()].map(([k,a])=>{const cs=a.map(chgOf).filter(c=>c>-999);return{k,a,avg:cs.length?cs.reduce((x,y)=>x+y,0)/cs.length:-999,buys:a.filter(g=>buyOf(g)!=null).length}}).sort((x,y)=>y.avg-x.avg);
-    list=gs.flatMap(o=>{hdr[o.a[0].symbol]=`<tr class="grp${COLSEC.has(o.k)?' col':''}" data-sg="${escH(o.k)}" title="Click to ${COLSEC.has(o.k)?'expand':'collapse'}"><td colspan="7"><span class="sgt">${COLSEC.has(o.k)?'▸':'▾'}</span>${escH(o.k)} · ${o.a.length} · ${o.avg>-999?(o.avg>=0?'+':'')+o.avg.toFixed(1)+'%':'–'}${o.buys?' · '+o.buys+' BUY':''}</td></tr>`;return o.a});
+    list=gs.flatMap(o=>{hdr[o.a[0].symbol]=`<tr class="grp${COLSEC.has(o.k)?' col':''}" data-sg="${escH(o.k)}" tabindex="0" role="button" aria-expanded="${!COLSEC.has(o.k)}" title="Click to ${COLSEC.has(o.k)?'expand':'collapse'}"><td colspan="7"><span class="sgt">${COLSEC.has(o.k)?'▸':'▾'}</span>${escH(o.k)} · ${o.a.length} · ${o.avg>-999?(o.avg>=0?'+':'')+o.avg.toFixed(1)+'%':'–'}${o.buys?' · '+o.buys+' BUY':''}</td></tr>`;return o.a});
   }
   if(W){buildSecPanel();updHidBtn()}
   const side=document.querySelector('aside'),order=list.map(g=>g.symbol).join(',');
@@ -619,12 +634,12 @@ function renderRows(){
     const st=side.scrollTop;
     if(W&&compactView){
       const tip=g=>{const t=trend[g.symbol],h=htf[g.symbol];return g.symbol+' '+chgCell(g)+(t&&t.buy!=null?' · BUY '+(t.buy===0?'now':t.buy+' bars ago'):'')+(t&&t.gap>-999?' · gap '+gapCell(g.symbol):'')+(riskOf(g.symbol)<999?' · risk '+riskOf(g.symbol).toFixed(1)+'%':'')+(h?' · HTF '+(h.bull?'✓':'✗'):'')};
-      const chip=g=>{const c=chgOf(g),cs=c<=-999?'–':(c>=0?'+':'')+c.toFixed(1);return `<span class="cc ${c>=0?'u':'d'}${g.symbol===sel?' sel':''}" data-s="${g.symbol}" title="${escH(tip(g))}"><b>${g.symbol}</b><i class="${c>=0?'up':'down'}">${cs}</i><span class="xb" data-x="${g.symbol}" title="Hide ${g.symbol}">✕</span></span>`};
+      const chip=g=>{const c=chgOf(g),cs=c<=-999?'–':(c>=0?'▲+':'▼')+c.toFixed(1);return `<span class="cc ${c>=0?'u':'d'}${g.symbol===sel?' sel':''}${buyOf(g)!=null&&REG.weak?' wk':''}" role="button" aria-label="${g.symbol} ${cs}%${buyOf(g)!=null?', BUY signal':''}" data-s="${g.symbol}" title="${escH(tip(g))}"><b>${g.symbol}</b><i class="${c>=0?'up':'down'}">${cs}</i><span class="xb" role="button" aria-label="Hide ${g.symbol}" data-x="${g.symbol}" title="Hide ${g.symbol}">✕</span></span>`};
       let h='',cur=[];const flush=()=>{if(cur.length)h+=`<tr><td colspan="7" class="cw"><div class="cgrid">${cur.map(chip).join('')}</div></td></tr>`;cur=[]};
       list.forEach(g=>{if(hdr[g.symbol]){flush();h+=hdr[g.symbol]}if(!(hdr_on&&COLSEC.has(secOf(g.symbol))))cur.push(g)});flush();
       $('rows').innerHTML=h||'<tr><td colspan="7" class="msg">No results. Loosen the filter.</td></tr>';
     }else
-    $('rows').innerHTML=list.map(g=>`${hdr[g.symbol]||''}${hdr_on&&COLSEC.has(secOf(g.symbol))?'':`<tr class="row ${g.symbol===sel?'sel':''}" data-s="${g.symbol}"><td><span class="sym">${g.symbol}</span>${W?'':buyTag(g.symbol)}</td>${W?'':`<td>${px(g.price)}</td>`}${W?`<td class="${chgOf(g)>=0?'up':'down'}">${chgCell(g)}</td><td class="up">${barsCell(g.symbol)}</td><td>${htfCell(g.symbol)}</td><td>${gapCell(g.symbol)}</td><td>${riskCell(g.symbol)}</td><td class="xc"><button class="xb" data-x="${g.symbol}" title="Hide ${g.symbol}" aria-label="Hide ${g.symbol}">✕</button></td>`:''}</tr>`}`).join('')
+    $('rows').innerHTML=list.map(g=>`${hdr[g.symbol]||''}${hdr_on&&COLSEC.has(secOf(g.symbol))?'':`<tr class="row ${g.symbol===sel?'sel':''}${buyOf(g)!=null&&REG.weak?' wk':''}" data-s="${g.symbol}"><td><span class="sym">${g.symbol}</span>${W?'':buyTag(g.symbol)}</td>${W?'':`<td>${px(g.price)}</td>`}${W?`<td class="${chgOf(g)>=0?'up':'down'}">${chgCell(g)}</td><td class="up">${barsCell(g.symbol)}</td><td>${htfCell(g.symbol)}</td><td>${gapCell(g.symbol)}</td><td>${riskCell(g.symbol)}</td><td class="xc"><button class="xb" data-x="${g.symbol}" title="Hide ${g.symbol}" aria-label="Hide ${g.symbol}">✕</button></td>`:''}</tr>`}`).join('')
       ||'<tr><td colspan="7" class="msg">No results. Loosen the filter.</td></tr>';
     side.scrollTop=st;lastOrder=order;
     const cs=$('chips'),cl=cs.scrollLeft;
@@ -745,8 +760,10 @@ async function loadTrend(force=false){
       const I=indicator(bars),n=bars.length-1;
       let chg=null;{const intra=typeof bars[n].time==='number',ld=intra?Math.floor(bars[n].time/86400):0;let pc=null;if(!intra){if(n>0)pc=bars[n-1].close}else for(let k=n;k>=0;k--)if(Math.floor(bars[k].time/86400)<ld){pc=bars[k].close;break}if(pc)chg=(bars[n].close/pc-1)*100}
       trend[s]=I.avwap[n]>0?{bull:I.bull[n],gap:(I.slow[n]/I.avwap[n]-1)*100,buy:buyAgo(bars,I),last:bars[n].close,av:I.avwap[n],chg}:{bull:false,gap:-999,buy:null,last:bars[n].close,av:I.avwap[n],chg};
+      if(typeof bars[n].time==='number'&&window.logSig){const tb=trend[s].buy;if(tb!=null&&tb<=1)logSig(s,bars[n-tb],t);updJ(s,bars,t)}
     }
     trendReady=true;renderRows();if(tab==='w'){loadHtf(force);loadRvol(force);loadM30(force)}
+    window.loadReg&&loadReg(force);
   }catch(e){if(run===trendRun)status('Trend scan error: '+e.message)}
 }
 
@@ -928,6 +945,64 @@ function schedule(){clearInterval(timer);if($('auto').checked)timer=setInterval(
 $('auto').onchange=schedule;schedule();
 if(!key())document.querySelector('header').classList.add('open');
 loadGainers();
+</script>
+<dialog id="jd" aria-labelledby="jt"><h2 id="jt" style="margin:0 0 6px;font-size:16px">Signal journal</h2><p class="mi" id="jn"></p><div id="jb"></div><div style="display:flex;gap:8px"><button id="jx">Export CSV</button><button id="jc">Clear</button><button id="jq" autofocus>Close</button></div></dialog>
+<script>
+(()=>{
+const etMin=()=>{const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'numeric',hour12:false}).formatToParts(new Date());const g=k=>+p.find(x=>x.type===k).value;return(g('hour')%24)*60+g('minute')};
+const phase=m=>m<570?['Pre-market',1]:m<585?['Open volatility',1]:m<690?['Prime window',0]:m<840?['Midday chop',1]:m<900?['Afternoon build',0]:m<960?['Power hour',0]:['After hours',1];
+let sT=null,pend=[];const say=t=>{const l=$('live');l.textContent='';setTimeout(()=>l.textContent=t,50)};
+$('status').setAttribute('role','status');
+// ---- 1. market regime + 6. time-of-day ----
+const RS={};let regAt=0;
+const paint=()=>{const[pn,pw]=phase(etMin()),ks=Object.keys(RS),n=ks.filter(x=>RS[x].ok).length,have=ks.length;
+  const rl=!have?'Regime loading':n==2?'Risk-on':n==1?'Mixed':'Risk-off',w=$('dimw').checked&&((have&&n===0)||pw);
+  const part=x=>RS[x]?x+' '+(RS[x].ok?'▲ bull':'▼ bear')+(RS[x].chg==null?'':' '+(RS[x].chg>=0?'+':'')+RS[x].chg.toFixed(1)+'%'):'';
+  const el=$('regime');el.textContent=[rl,part('SPY'),part('QQQ'),pn].filter(Boolean).join(' · ')+(w?' · signals dimmed':'');el.className='rg '+(!have?'':n==2?'on':n==1?'mx':'off');
+  const ch=REG.txt&&REG.txt!==rl;REG.ph=pn;
+  if(REG.weak!==w||REG.txt!==rl){REG.weak=w;REG.txt=rl;REG.rl=rl;if(ch)say('Market regime now '+rl);lastOrder='';renderRows()}};
+window.loadReg=async force=>{if(!(akey()&&asec())||(!force&&Date.now()-regAt<18e4))return;regAt=Date.now();
+  try{const all=await fetchMulti(['SPY','QQQ'],'30min',7);
+    for(const x of['SPY','QQQ']){const bars=clean((all[x]||[]).map(b=>({time:etSec(Date.parse(b.t)),open:b.o,high:b.h,low:b.l,close:b.c,volume:b.v}))),n=bars.length-1;if(bars.length<14)continue;
+      const I=indicator(bars),ld=Math.floor(bars[n].time/86400);let pc=null;for(let k=n;k>=0;k--)if(Math.floor(bars[k].time/86400)<ld){pc=bars[k].close;break}
+      RS[x]={ok:I.avwap[n]>0&&I.bull[n]&&bars[n].close>I.avwap[n],chg:pc?(bars[n].close/pc-1)*100:null}}
+    paint()}catch(e){}};
+$('dimw').onchange=paint;setInterval(paint,3e4);paint();
+// ---- 10. journal ----
+const JK='sigjournal';let J=[];try{J=JSON.parse(store.get(JK)||'[]')}catch{}
+const sv=()=>{J=J.slice(-2000);store.set(JK,JSON.stringify(J))};
+window.logSig=(s,bar,t)=>{const k=s+'|'+t+'|'+bar.time;if(J.some(e=>e.k===k))return;const r=riskOf(s),tr=trend[s];
+  J.push({k,s,sec:secOf(s),t:bar.time,tf:t,px:bar.close,rv:rvol[s]??null,gap:tr&&tr.gap>-999?+tr.gap.toFixed(2):null,risk:r<999?+r.toFixed(2):null,reg:REG.rl||'',ph:phase(Math.floor(bar.time%86400/60))[0],eod:null,d1:null,d3:null});sv();
+  pend.push(s);clearTimeout(sT);sT=setTimeout(()=>{say('New BUY signal: '+pend.join(', '));pend=[]},1500)};
+window.updJ=(s,bars,t)=>{let ch=0;const today=Math.floor(etSec(Date.now())/86400);
+  for(const e of J){if(e.s!==s||e.tf!==t||e.d3!=null)continue;const d0=Math.floor(e.t/86400),dm=new Map();
+    for(const b of bars)if(b.time>e.t)dm.set(Math.floor(b.time/86400),b.close);
+    const fin=[...dm.keys()].sort((a,b)=>a-b).filter(d=>d>d0&&d<today),pc=c=>+((c/e.px-1)*100).toFixed(2);
+    if(e.eod==null&&d0<today){e.eod=pc(dm.has(d0)?dm.get(d0):e.px);ch=1}
+    if(e.d1==null&&fin[0]!=null){e.d1=pc(dm.get(fin[0]));ch=1}
+    if(e.d3==null&&fin[2]!=null){e.d3=pc(dm.get(fin[2]));ch=1}}
+  if(ch)sv()};
+const cell=(a,k)=>{const v=a.map(e=>e[k]).filter(x=>x!=null);return v.length?Math.round(v.filter(x=>x>0).length/v.length*100)+'% win · avg '+(v.reduce((x,y)=>x+y,0)/v.length).toFixed(2)+'% (n='+v.length+')':'–'};
+const tbl=(title,f)=>{const m=new Map();J.forEach(e=>{const k=f(e)||'–';(m.get(k)||m.set(k,[]).get(k)).push(e)});
+  return'<h3>'+title+'</h3><table><thead><tr><th scope="col">Group</th><th scope="col">Signals</th><th scope="col">Same-day close</th><th scope="col">+1 day</th><th scope="col">+3 days</th></tr></thead><tbody>'+[...m].sort((a,b)=>b[1].length-a[1].length).map(([k,a])=>'<tr><th scope="row">'+escH(k)+'</th><td>'+a.length+'</td><td>'+cell(a,'eod')+'</td><td>'+cell(a,'d1')+'</td><td>'+cell(a,'d3')+'</td></tr>').join('')+'</tbody></table>'};
+const showJ=()=>{$('jn').textContent=J.length?J.length+' signals logged in this browser. Win % = close above the signal-bar close. Needs a few weeks of data before it means much.':'No signals yet. They are logged automatically as the Scanner finds fresh BUYs (needs Alpaca keys, intraday timeframe).';
+  $('jb').innerHTML=J.length?tbl('Overall',()=>'All')+tbl('By market regime',e=>e.reg)+tbl('By time of day',e=>e.ph)+tbl('By sector',e=>e.sec):'';$('jd').showModal()};
+$('jbtn').onclick=showJ;$('jq').onclick=()=>$('jd').close();
+$('jc').onclick=()=>{if(confirm('Delete all '+J.length+' journal entries?')){J=[];sv();showJ()}};
+$('jx').onclick=()=>{const c=['symbol','sector','signal_time_ET','tf','entry','rvol','gap_pct','risk_pct','regime','phase','same_day_pct','d1_pct','d3_pct'],q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=J.map(e=>[e.s,e.sec,new Date(e.t*1e3).toISOString().replace('T',' ').slice(0,16),e.tf,e.px,e.rv,e.gap,e.risk,e.reg,e.ph,e.eod,e.d1,e.d3].map(q).join(','));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c.join(',')+'\n'+rows.join('\n')],{type:'text/csv'}));a.download='signal-journal.csv';a.click()};
+// ---- accessibility ----
+document.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||tab==='m'||/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(e.target.tagName||'')||$('jd').open)return;
+  if(e.key==='j'||e.key==='k'){e.preventDefault();stepSel(e.key==='j'?1:-1)}});
+$('rows').addEventListener('keydown',e=>{const g=e.target.closest&&e.target.closest('tr.grp[data-sg]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();const k=g.dataset.sg;g.click();setTimeout(()=>{const n=document.querySelector('tr.grp[data-sg="'+CSS.escape(k)+'"]');n&&n.focus()})}});
+$('colall').onclick=()=>{WLS.forEach(x=>COLSEC.add(secOf(x)));saveCol();lastOrder='';renderRows()};
+$('expall').onclick=()=>{COLSEC.clear();saveCol();lastOrder='';renderRows()};
+let z=+store.get('az')||1;const az=()=>{z=Math.max(.8,Math.min(1.6,z));document.querySelector('aside').style.zoom=z;store.set('az',z)};
+$('fsm').onclick=()=>{z-=.1;az()};$('fbg').onclick=()=>{z+=.1;az()};az();
+const hc=on=>{document.documentElement.classList.toggle('hc',on);$('hcb').setAttribute('aria-pressed',on);store.set('ahc',on?'1':'0')};
+$('hcb').onclick=()=>hc(!document.documentElement.classList.contains('hc'));hc(store.get('ahc')==='1');
+})();
 </script>
 </body>
 </html>
