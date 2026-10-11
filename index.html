@@ -43,7 +43,8 @@ th{position:sticky;top:0;background:var(--panel);text-align:right;color:var(--mu
 th:first-child,td:first-child{text-align:left}
 td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 tr.row{cursor:pointer}
-#mainview.w.wc{grid-template-columns:330px minmax(0,1fr)}#mainview.wc thead{display:none}
+#mainview.w.wc{grid-template-columns:330px minmax(0,1fr)}
+#mainview.w.v{grid-template-columns:150px minmax(0,1fr)}#mainview.wc thead{display:none}
 .cgrid{display:flex;flex-wrap:wrap;gap:4px;padding:6px}
 .cc{display:inline-flex;align-items:center;gap:5px;padding:3px 6px 3px 7px;border:1px solid var(--line);border-left-width:3px;border-radius:6px;cursor:pointer;font-size:12px;background:var(--bg);user-select:none}
 .cc.u{border-left-color:var(--up)}.cc.d{border-left-color:var(--down)}
@@ -97,7 +98,7 @@ header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,e
   input,select{font-size:16px}
   button{min-height:36px}
   main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
-  #mainview.w{grid-template-columns:minmax(0,1fr)}
+  #mainview.w,#mainview.w.v{grid-template-columns:minmax(0,1fr)}
   aside{display:none}
   .bar{gap:6px;padding:6px 10px}
   .title{font-size:16px;margin-right:4px}
@@ -115,8 +116,8 @@ header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,e
   .bar{flex-wrap:nowrap;padding:4px 10px}.tf{width:auto;margin-left:auto}
   .dock{padding:3px 10px}.dock button{min-height:32px}
 }
-#secpanel{position:fixed;z-index:50;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:60vh;overflow:auto;min-width:200px;box-shadow:0 8px 24px #0008}
-#secpanel label{display:flex;align-items:center;gap:8px;padding:4px 2px;color:var(--text);font-size:13px;white-space:nowrap}#secpanel small{color:var(--mute);margin-left:auto}
+#secpanel,#vpanel{position:fixed;z-index:50;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:60vh;overflow:auto;min-width:200px;box-shadow:0 8px 24px #0008}
+#secpanel label,#vpanel label{display:flex;align-items:center;gap:8px;padding:4px 2px;color:var(--text);font-size:13px;white-space:nowrap}#secpanel small{color:var(--mute);margin-left:auto}
 #secpanel .sp-top{display:flex;gap:6px;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:4px}
 .xc{width:26px;padding:2px 4px!important}.xb{background:none;border:0;color:var(--mute);padding:2px 6px;min-height:0;font-size:12px;border-radius:4px}.xb:hover{color:var(--down);background:#2a1a1f}
 .sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
@@ -132,7 +133,7 @@ header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,e
 </head>
 <body>
 <header>
-  <div class="tabs"><button id="tabG" class="on">Gainers</button><button id="tabW">Scanner</button><button id="tabM">Multi-chart</button></div>
+  <div class="tabs"><button id="tabG" class="on">Gainers</button><button id="tabW">Scanner</button><button id="tabV" title="Volatility Adaptive Filtered Trend on 2-hour candles">VAFT 2H</button><button id="tabM">Multi-chart</button></div>
   <button id="refresh">Refresh</button>
   <span id="regime" class="rg" role="status" aria-live="polite">Regime: –</span>
   <label title="Dim BUY signals when SPY and QQQ are both bearish, or during open volatility / midday chop / pre- and after-hours"><input id="dimw" type="checkbox" checked> Dim weak setups</label>
@@ -141,6 +142,7 @@ header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,e
   <div id="live" class="sr" aria-live="polite"></div>
   <button id="gear" aria-expanded="false" title="Show/hide the settings & filter panels">⚙ Settings</button>
   <span id="wsecbar" hidden><button id="wview" title="Switch between compact chips and the full table">Table</button> <span class="secwrap"><button id="wsec">Sectors</button><div id="secpanel" hidden></div></span> <button id="colall" title="Collapse all sectors">Collapse all</button> <button id="expall" title="Expand all sectors">Expand all</button> <button id="wunhide" hidden>Show hidden</button></span>
+  <span class="flt" id="vctl" hidden>VAFT 2H: <select id="vsrc" aria-label="Symbol source" title="Watchlist, or today's top gainers (scan them for SHORT signals)"><option value="wl">Watchlist</option><option value="g">Top gainers</option></select> <select id="vside" aria-label="Signal side"><option value="both">Long + Short</option><option value="long">Long only</option><option value="short">Short only</option></select> <label><input id="vonly" type="checkbox" checked> Signal within</label> <input id="vn" type="number" value="4" min="1" max="50"> bars <button id="vscan" title="Scan the watchlist now (VAFT signals on 2h bars). Nothing scans automatically on this tab.">Scan</button> <label>Candles <select id="vcand" aria-label="Candle colour source"><option value="cloud">Cloud cross trend</option><option value="vaft">VAFT regime</option></select></label> <label title="Show/hide the VAFT lines, bands and cloud overlay on the chart"><input id="vind" type="checkbox" checked> Indicator</label> <label><input id="vcloud" type="checkbox" checked> Cloud cross overlay</label> <span class="secwrap"><button id="velm" title="Show or hide individual indicator elements">Elements ▾</button><div id="vpanel" hidden></div></span> <button id="vedit">Edit watchlist</button> <button id="vunhide" hidden>Show hidden</button></span>
   <div class="settings">
   <input id="key" type="password" placeholder="FMP API key" aria-label="FMP API key" size="26">
   <input id="akey" type="password" placeholder="Alpaca key ID (for charts)" aria-label="Alpaca key ID" size="22">
@@ -216,6 +218,73 @@ let showInd=true,showDays=true,trendCandles=true,showSig=true;
 const MOBQ='(max-width:800px),(max-height:500px) and (orientation:landscape)',isMob=()=>matchMedia(MOBQ).matches,VIS_MOB=70;const PANES=[];
 const tnum=t=>typeof t==='number'?t:Date.parse(t+'T00:00:00Z')/1000;
 const FIB=[0,0.236,0.382,0.5,0.618,0.786,1];
+const VBARS=130,VL='rgb(57,255,20)',VS='rgb(138,43,226)';
+let vCand='cloud',vCloud=true;
+const VE0={trend:1,bands:0,fill:1,sig:0,clines:0,cfill:1,csig:1};let VE={...VE0};try{VE={...VE0,...JSON.parse(store.get('vElm')||'{}')}}catch{}
+// Port of "Full Cloud Cross Confirmation [Fixed Entries]" (Pine v6) for the VAFT tab chart (2h bars)
+const FP={s:65,l:130,v:400,mtfLen:50,rt:0.0015,ex:0.002,ct:0.0005},FC_BULL='#26a69a',FC_BEAR='#ef5350',FC_NEUT='#787b86';
+// 4H macro EMA built from the 2h bars on TradingView's regular-session 4H grid (9:30-13:30, 13:30-16:00 ET); each bar sees the EMA of the previous completed 4H bar (non-repainting, like ta.ema(close,50)[1] with lookahead_on)
+function mtfEma(bars,len){
+  const key=bars.map(b=>{const m=Math.floor(b.time%86400/60);return Math.floor(b.time/86400)*2+(m<810?0:1)});
+  const cl=[];bars.forEach((b,i)=>{if(i&&key[i]===key[i-1])cl[cl.length-1]=b.close;else cl.push(b.close)});
+  const a=2/(len+1),e=[];cl.forEach((c,i)=>e.push(i?c*a+e[i-1]*(1-a):c));
+  let g=-1;
+  return bars.map((b,i)=>{if(i===0||key[i]!==key[i-1])g++;return g>=1?e[g-1]:null});
+}
+function fcc(bars,P=FP){
+  const n=bars.length,c=bars.map(b=>b.close);
+  const ema=L=>{const a=2/(L+1),o=[];c.forEach((x,i)=>o.push(i?x*a+o[i-1]*(1-a):x));return o};
+  const es=ema(P.s),el=ema(P.l),ev=ema(P.v),mt=mtfEma(bars,P.mtfLen),state=[],sig=[];
+  let inB=false,inS=false,pBull=false,pBear=false;
+  for(let i=0;i<n;i++){
+    const hi=Math.max(es[i],el[i]),lo=Math.min(es[i],el[i]),m=mt[i],b=bars[i];
+    const bull=es[i]>el[i]*(1+P.ct),bear=es[i]<el[i]*(1-P.ct);
+    const mb=m!=null&&c[i]>m&&es[i]>m&&el[i]>m,ms=m!=null&&c[i]<m&&es[i]<m&&el[i]<m;
+    const up=i>0&&es[i]>es[i-1],dn=i>0&&es[i]<es[i-1],bh=i>0&&c[i]>bars[i-1].high,bl=i>0&&c[i]<bars[i-1].low;
+    const bFirst=bull&&!pBull&&mb&&c[i]>hi&&up,sFirst=bear&&!pBear&&ms&&c[i]<lo&&dn;
+    const bPb=bull&&mb&&b.low<=hi*(1+P.rt)&&c[i]>hi&&up&&bh,sPb=bear&&ms&&b.high>=lo*(1-P.rt)&&c[i]<lo&&dn&&bl;
+    const bx=m!=null&&i>0&&c[i]<m*(1-P.ex)&&c[i-1]>=m,sx=m!=null&&i>0&&c[i]>m*(1+P.ex)&&c[i-1]<=m;
+    let sl=false,ss=false,xl=false,xs=false;
+    if(inB){if(bx){inB=false;xl=true}}else if(bFirst||bPb){inB=true;inS=false;sl=true}
+    if(inS){if(sx){inS=false;xs=true}}else if(sFirst||sPb){inS=true;inB=false;ss=true}
+    if(sl)sig.push({i,k:'L'});if(ss)sig.push({i,k:'S'});if(xl)sig.push({i,k:'XL'});if(xs)sig.push({i,k:'XS'});
+    if(bPb&&inB&&!sl)sig.push({i,k:'PL'});if(sPb&&inS&&!ss)sig.push({i,k:'PS'});
+    state.push(inB?1:inS?-1:0);pBull=bull;pBear=bear;
+  }
+  return{es,el,ev,mt,state,sig};
+}
+// Port of "Volatility Adaptive Filtered Trend" (Pine v6): adaptive EMA -> EMA -> displacement-weighted filter -> return-volatility bands -> regime flips
+const VP={volLen:15,normLen:30,minSC:0.084,maxSC:0.33,emaLen:5,fLen:9,mom:2,bvLen:22,um:2,lm:2};
+function vaft(bars,P=VP){
+  const n=bars.length,src=bars.map(b=>(b.high+b.low+b.close)/3);
+  const tr=bars.map((b,i)=>i?Math.max(b.high-b.low,Math.abs(b.high-bars[i-1].close),Math.abs(b.low-bars[i-1].close)):b.high-b.low);
+  const rmaN=(a,L)=>{const o=Array(a.length).fill(null);let s=0;for(let i=0;i<a.length;i++){if(i<L-1)s+=a[i];else if(i===L-1){s+=a[i];o[i]=s/L}else o[i]=(o[i-1]*(L-1)+a[i])/L}return o};
+  const smaN=(a,L)=>a.map((_,i)=>{if(i<L-1)return null;let s=0;for(let k=i-L+1;k<=i;k++){if(a[k]==null)return null;s+=a[k]}return s/L});
+  const atr=rmaN(tr,P.volLen),net=src.map((x,i)=>i>=P.volLen?Math.abs(x-src[i-P.volLen]):null);
+  const ab=smaN(atr,P.normLen),cb=smaN(net,P.normLen);
+  const em=[],k=2/(P.emaLen+1);let prev=null;
+  for(let i=0;i<n;i++){
+    const af=ab[i]?atr[i]/ab[i]:1,cf=cb[i]?net[i]/cb[i]:1;
+    const nf=Math.max(0,Math.min(1,(af+cf)*.5/2)),sc=P.minSC+(P.maxSC-P.minSC)*nf;
+    prev=prev==null?src[i]:prev+sc*(src[i]-prev);
+    em.push(i?prev*k+em[i-1]*(1-k):prev);
+  }
+  const ret=src.map((x,i)=>i&&src[i-1]?(x-src[i-1])/src[i-1]:0);
+  const trend=[],up=[],lo=[],sq=[],sig=[];let q=0;
+  for(let i=0;i<n;i++){
+    let num=0,cs=0;
+    for(let j=0;j<P.fLen;j++){const a=em[i-j],b=em[i-j-P.mom];if(a!=null&&b!=null){const c=Math.abs(a-b);num+=c*a;cs+=c}}
+    let t=null;
+    if(cs>0)t=num/cs;else if(i>=P.fLen-1){let s=0;for(let j=0;j<P.fLen;j++)s+=em[i-j];t=s/P.fLen}
+    let vol=null;
+    if(i>=P.bvLen){let m=0;for(let j=i-P.bvLen;j<i;j++)m+=ret[j];m/=P.bvLen;let v=0;for(let j=i-P.bvLen;j<i;j++)v+=(ret[j]-m)**2;vol=Math.sqrt(v/P.bvLen)}
+    const ok=t!=null&&vol!=null,u=ok?t+P.um*vol*t:null,l=ok?t-P.lm*vol*t:null,c=bars[i].close;
+    const nq=u!=null&&c>u?1:l!=null&&c<l?-1:q;
+    if(nq!==q)sig.push({i,d:nq});
+    q=nq;trend.push(t);up.push(u);lo.push(l);sq.push(q);
+  }
+  return{trend,up,lo,sq,sig};
+}
 const CLOUD={1:'rgba(14,187,35,.22)','-1':'rgba(255,50,50,.22)',0:'rgba(140,140,140,.18)'};
 
 // Port of the supplied script's plotted parts: anchored-VWAP approximation + EMA cloud with PVT/RSI/ATR confluence colouring
@@ -264,7 +333,7 @@ class Pane{
       layout:{background:{color:'#10151c'},textColor:'#7f8fa3'},
       grid:{vertLines:{color:'#182130'},horzLines:{color:'#182130'}},
       rightPriceScale:{borderColor:'#243040'},
-      timeScale:{borderColor:'#243040',timeVisible:true,secondsVisible:false},
+      timeScale:{borderColor:'#243040',timeVisible:true,secondsVisible:false,rightOffset:8},
       handleScale:{axisPressedMouseMove:{time:true,price:false},mouseWheel:true,pinch:true},
       handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
       localization:{locale:'en-US'},crosshair:{mode:0},
@@ -273,6 +342,12 @@ class Pane{
     this.vs=this.chart.addHistogramSeries({priceFormat:{type:'volume'},priceScaleId:'vol',lastValueVisible:false,priceLineVisible:false});
     this.chart.priceScale('vol').applyOptions({scaleMargins:{top:0.85,bottom:0}});
     this.av=this.chart.addLineSeries({lineWidth:3,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+    this.vu=this.chart.addLineSeries({lineWidth:1,color:'rgba(57,255,20,.65)',priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+    this.vl=this.chart.addLineSeries({lineWidth:1,color:'rgba(138,43,226,.65)',priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+    const hid=()=>null,LS={lineWidth:1,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,autoscaleInfoProvider:hid};
+    this.ev=this.chart.addLineSeries({...LS,color:'#9c27b0'});
+    this.mt=this.chart.addLineSeries({...LS,lineWidth:2,color:'rgba(41,98,255,.8)'});
+    this.mode='std';this.vd=null;this.vsg=[];this.fd=null;this.fsg=[];
     this.cv=document.createElement('canvas');
     Object.assign(this.cv.style,{position:'absolute',left:'0',top:'0',pointerEvents:'none',zIndex:'10'});
     el.style.position='relative';el.appendChild(this.cv);
@@ -288,8 +363,13 @@ class Pane{
     this.cv.width=W*d;this.cv.height=H*d;this.cv.style.width=W+'px';this.cv.style.height=H+'px';this.sig='';
   }
   setBars(full,fit=true){
-    const I=full.length?indicator(full):null,s=startIdx(full),bars=full.slice(s);
+    const vm=this.mode==='vaft',V=vm&&full.length?vaft(full):null,I=full.length&&!vm?indicator(full):null,s=vm?Math.max(0,full.length-VBARS):startIdx(full),bars=full.slice(s);
     this.bars=bars;
+    this.vd=V&&{trend:V.trend.slice(s),up:V.up.slice(s),lo:V.lo.slice(s),sq:V.sq.slice(s)};
+    this.vsg=V?V.sig.filter(e=>e.i>=s).map(e=>({i:e.i-s,d:e.d})):[];
+    const F=vm&&full.length?fcc(full):null;
+    this.fd=F&&{es:F.es.slice(s),el:F.el.slice(s),ev:F.ev.slice(s),mt:F.mt.slice(s),state:F.state.slice(s)};
+    this.fsg=F?F.sig.filter(e=>e.i>=s).map(e=>({i:e.i-s,k:e.k})):[];
     this.ind=I&&{avwap:I.avwap.slice(s),fast:I.fast.slice(s),slow:I.slow.slice(s),state:I.state.slice(s),bull:I.bull.slice(s)};
     this.tn=bars.map(b=>tnum(b.time));
     const dd=[];for(let i=1;i<Math.min(bars.length,60);i++)dd.push(this.tn[i]-this.tn[i-1]);dd.sort((a,b)=>a-b);
@@ -298,15 +378,54 @@ class Pane{
     let dn=0;this.dn=bars.map((b,i)=>{if(i&&this.intra&&Math.floor(this.tn[i]/86400)!==Math.floor(this.tn[i-1]/86400))dn++;return dn});
     this.recolor();
     this.vs.setData(bars.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#2fd3a055':'#ff6b6b55'})));
-    this.av.setData(bars.map((b,i)=>{const a=this.ind.avwap[i];return a>0?{time:b.time,value:a,color:b.close>a?'#2fd3a0':b.close<a?'#f5222d':'#999999'}:{time:b.time}}));
-    this.av.applyOptions({visible:showInd});
+    if(this.vd)this.setV();
+    else{
+      this.vu.setData([]);this.vl.setData([]);this.ev.setData([]);this.mt.setData([]);this.av.applyOptions({lineWidth:3});
+      this.av.setData(bars.map((b,i)=>{const a=this.ind.avwap[i];return a>0?{time:b.time,value:a,color:b.close>a?'#2fd3a0':b.close<a?'#f5222d':'#999999'}:{time:b.time}}));
+    }
+    this.visAll();
     this.markCross();
-    if(fit){const n=bars.length;if(isMob()&&n>VIS_MOB)this.chart.timeScale().setVisibleLogicalRange({from:n-VIS_MOB,to:n+4});else this.chart.timeScale().fitContent()}
+    if(fit){const n=bars.length;if(isMob()&&n>VIS_MOB)this.chart.timeScale().setVisibleLogicalRange({from:n-VIS_MOB,to:n+4});else{const ts=this.chart.timeScale();ts.fitContent();ts.setVisibleLogicalRange({from:-0.5,to:n-1+8})}}
     this.sig='';
+  }
+  // VAFT: filtered trend line coloured by regime, upper/lower bands (the band fill is painted on the overlay canvas in draw())
+  setV(){
+    const D=this.vd,B=this.bars,pt=(a,i)=>a[i]!=null?{time:B[i].time,value:a[i]}:{time:B[i].time};
+    this.av.applyOptions({lineWidth:2});
+    this.av.setData(B.map((b,i)=>D.trend[i]!=null?{time:b.time,value:D.trend[i],color:D.sq[i]===1?VL:VS}:{time:b.time}));
+    this.vu.setData(B.map((b,i)=>pt(D.up,i)));this.vl.setData(B.map((b,i)=>pt(D.lo,i)));
+    const F=this.fd;
+    this.ev.setData(B.map((b,i)=>({time:b.time,value:F.ev[i]})));
+    this.mt.setData(B.map((b,i)=>F.mt[i]!=null?{time:b.time,value:F.mt[i]}:{time:b.time}));
+    this.visAll();
+  }
+  visAll(){const v=!!this.vd,I=showInd;this.av.applyOptions({visible:I&&(!v||!!VE.trend)});this.vu.applyOptions({visible:I&&(!v||!!VE.bands)});this.vl.applyOptions({visible:I&&(!v||!!VE.bands)});this.ev.applyOptions({visible:I&&vCloud&&(!v||!!VE.clines)});this.mt.applyOptions({visible:I&&vCloud&&(!v||!!VE.clines)})}
+  markV(){
+    const B=this.bars,m=[];
+    if(showSig){
+      if(VE.sig)(this.vsg||[]).forEach(e=>{const b=B[e.i];if(!b)return;m.push(e.d>0?{time:b.time,position:'belowBar',color:VL,shape:'arrowUp',text:'LONG'}:{time:b.time,position:'aboveBar',color:VS,shape:'arrowDown',text:'SHORT'})});
+      if(vCloud&&VE.csig)(this.fsg||[]).forEach(e=>{const b=B[e.i];if(!b)return;
+        const o={L:{position:'belowBar',color:'#00ff99',shape:'arrowUp',text:'CC LONG'},S:{position:'aboveBar',color:'#ff5555',shape:'arrowDown',text:'CC SHORT'},
+          PL:{position:'belowBar',color:'#00e676',shape:'circle'},PS:{position:'aboveBar',color:'#ef5350',shape:'circle'},
+          XL:{position:'aboveBar',color:'#9e9e9e',shape:'square',text:'X'},XS:{position:'belowBar',color:'#9e9e9e',shape:'square',text:'X'}}[e.k];
+        m.push({time:b.time,...o})});
+    }
+    m.sort((a,b)=>a.time-b.time);
+    this.cs.setMarkers(m);
   }
   // candle colour follows trend: bull (EMA13 > AVWAP) = green, otherwise red; up candles hollow, down candles filled
   recolor(){
     const I=this.ind;
+    if(this.vd){
+      const D=this.vd,F=this.fd;
+      this.cs.setData(this.bars.map((b,i)=>{
+        if(!trendCandles)return b;
+        const c=vCand==='cloud'&&F?(F.state[i]===1?FC_BULL:F.state[i]===-1?FC_BEAR:FC_NEUT):(D.sq[i]===1?VL:VS);
+        return{time:b.time,open:b.open,high:b.high,low:b.low,close:b.close,color:c,borderColor:c,wickColor:c};
+      }));
+      this.cs.applyOptions({borderVisible:trendCandles});
+      return;
+    }
     this.cs.setData(this.bars.map((b,i)=>{
       if(!trendCandles||!I)return b;
       const bull=I.bull[i],c=bull?'#2fd3a0':'#ff6b6b',up=b.close>=b.open;
@@ -316,6 +435,7 @@ class Pane{
   }
   // BUY: EMA13 crosses above AVWAP, SELL: EMA13 crosses below AVWAP; both only when AVWAP is green (bar close > AVWAP)
   markCross(){
+    if(this.vd)return this.markV();
     const I=this.ind,B=this.bars,m=[];
     if(I&&showSig)for(let i=1;i<B.length;i++){
       const a0=I.avwap[i-1],a1=I.avwap[i];if(!(a0>0&&a1>0))continue;
@@ -326,7 +446,7 @@ class Pane{
     }
     this.cs.setMarkers(m);
   }
-  setInd(){this.av.applyOptions({visible:showInd});this.sig=''}
+  setInd(){this.visAll();this.sig=''}
   setKey(k){if(k===this.key)return;this.key=k;this.pend=null;try{this.dr=JSON.parse(store.get('dr2:'+k)||'[]')}catch{this.dr=[]}this.dr.forEach(d=>{d.a.t=tnum(d.a.t);if(d.b)d.b.t=tnum(d.b.t)});this.sig=''}
   save(){status(store.set('dr2:'+this.key,JSON.stringify(this.dr))?'Drawings saved for '+this.key+' ('+this.dr.length+')':'Browser blocked storage: drawings will not persist after reload.')}
   tOf(i){const n=this.bars.length-1;i=Math.round(i);return i<=n?this.tn[Math.max(0,i)]:this.tn[n]+(i-n)*this.iv}
@@ -406,11 +526,11 @@ class Pane{
   draw(){
     const ps=this.chart.priceScale('right');if(!ps.options().autoScale)ps.applyOptions({autoScale:true});
     const W=this.el.clientWidth,H=this.el.clientHeight,ts=this.chart.timeScale(),r=ts.getVisibleLogicalRange();
-    const sig=[W,H,r&&r.from,r&&r.to,this.cs.priceToCoordinate(1),this.cs.priceToCoordinate(1000),this.dr.length,JSON.stringify(this.pend),this.hover&&this.hover.x+','+this.hover.y,showInd,showDays,this.bars.length].join('|');
+    const sig=[W,H,r&&r.from,r&&r.to,this.cs.priceToCoordinate(1),this.cs.priceToCoordinate(1000),this.dr.length,JSON.stringify(this.pend),this.hover&&this.hover.x+','+this.hover.y,showInd,showDays,vCloud,JSON.stringify(VE),this.bars.length].join('|');
     if(sig===this.sig||!W||!H)return;this.sig=sig;
     const ctx=this.cv.getContext('2d'),d=window.devicePixelRatio||1;
     ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,W,H);
-    if(!r||!this.ind)return;
+    if(!r||(!this.ind&&!this.vd))return;
     ctx.save();ctx.beginPath();ctx.rect(0,0,W-this.chart.priceScale('right').width(),H-ts.height());ctx.clip();
     if(this.intra&&showDays&&this.dn){
       const a0=Math.max(0,Math.floor(r.from)),b0=Math.min(this.bars.length-1,Math.ceil(r.to));
@@ -421,12 +541,30 @@ class Pane{
           const x0=ts.logicalToCoordinate(s)-bs/2,x1=ts.logicalToCoordinate(i)+bs/2;
           ctx.fillStyle=this.dn[i]%2?'rgba(110,150,220,.10)':'rgba(255,255,255,.025)';ctx.fillRect(x0,0,x1-x0,H);
           ctx.strokeStyle='rgba(127,143,163,.4)';ctx.beginPath();ctx.moveTo(x0,0);ctx.lineTo(x0,H);ctx.stroke();
-          ctx.fillStyle='#9fb0c5';ctx.fillText(new Date(this.tn[s]*1000).toLocaleDateString('en-US',{timeZone:'UTC',weekday:'short',month:'numeric',day:'numeric'}),Math.max(x0,0)+4,12);
+          const sw=x1-x0;
+          if(sw>=30){ctx.fillStyle='#9fb0c5';ctx.fillText(new Date(this.tn[s]*1000).toLocaleDateString('en-US',sw>=66?{timeZone:'UTC',weekday:'short',month:'numeric',day:'numeric'}:{timeZone:'UTC',month:'numeric',day:'numeric'}),Math.max(x0,0)+4,12)}
           s=i+1;
         }
       }
     }
-    if(showInd){
+    if(showInd&&vCloud&&VE.cfill&&this.fd){
+      const F=this.fd,a=Math.max(1,Math.floor(r.from)),b=Math.min(this.bars.length-1,Math.ceil(r.to));
+      for(let i=a;i<=b;i++){
+        const x0=ts.logicalToCoordinate(i-1),x1=ts.logicalToCoordinate(i),s0=this.cs.priceToCoordinate(F.es[i-1]),s1=this.cs.priceToCoordinate(F.es[i]),l0=this.cs.priceToCoordinate(F.el[i-1]),l1=this.cs.priceToCoordinate(F.el[i]);
+        if([x0,x1,s0,s1,l0,l1].some(v=>v==null))continue;
+        ctx.fillStyle=F.es[i]>F.el[i]?'rgba(0,255,0,.2)':'rgba(255,0,0,.2)';ctx.beginPath();ctx.moveTo(x0,s0);ctx.lineTo(x1,s1);ctx.lineTo(x1,l1);ctx.lineTo(x0,l0);ctx.closePath();ctx.fill();
+      }
+    }
+    if(showInd&&VE.fill&&this.vd){
+      const D=this.vd,a=Math.max(1,Math.floor(r.from)),b=Math.min(this.bars.length-1,Math.ceil(r.to));
+      for(let i=a;i<=b;i++){
+        if(D.up[i]==null||D.up[i-1]==null)continue;
+        const x0=ts.logicalToCoordinate(i-1),x1=ts.logicalToCoordinate(i),u0=this.cs.priceToCoordinate(D.up[i-1]),u1=this.cs.priceToCoordinate(D.up[i]),l0=this.cs.priceToCoordinate(D.lo[i-1]),l1=this.cs.priceToCoordinate(D.lo[i]);
+        if([x0,x1,u0,u1,l0,l1].some(v=>v==null))continue;
+        ctx.fillStyle=D.sq[i]===1?'rgba(57,255,20,.10)':'rgba(138,43,226,.10)';ctx.beginPath();ctx.moveTo(x0,u0);ctx.lineTo(x1,u1);ctx.lineTo(x1,l1);ctx.lineTo(x0,l0);ctx.closePath();ctx.fill();
+      }
+    }
+    if(showInd&&this.ind){
       const a=Math.max(1,Math.floor(r.from)),b=Math.min(this.bars.length-1,Math.ceil(r.to)),I=this.ind;
       for(let i=a;i<=b;i++){
         const x0=ts.logicalToCoordinate(i-1),x1=ts.logicalToCoordinate(i);
@@ -608,6 +746,7 @@ const riskOf=s=>{const t=trend[s];return t&&t.av>0&&t.last>t.av?(t.last-t.av)/t.
 const riskCell=s=>{const r=riskOf(s);return r>=999?'–':`<span class="${r<=3?'up':r>6?'amb':''}">${r.toFixed(1)}%</span>`};
 const buyTag=s=>{const t=trend[s];return t&&t.buy!=null?` <span class="up" style="font-size:11px" title="BUY ${t.buy} bar(s) ago">▲${t.buy}</span>`:''};
 function renderRows(){
+  if(tab==='v'){renderV();return}
   const f=$('exch').value,on=$('fon').checked,mp=+$('fp').value||0,mr=+$('fr').value||0,fb=$('fb').checked,fy=$('fbuy').checked,bn=Math.max(1,+$('fbn').value||4),haveA=!!(akey()&&asec());
   const val=g=>sortK==='rvol'?(rvol[g.symbol]??-1):sortK==='gap'?(trend[g.symbol]?trend[g.symbol].gap:-999):sortK==='buy'?(trend[g.symbol]&&trend[g.symbol].buy!=null?trend[g.symbol].buy:999):sortK==='chg'?chgOf(g):sortK==='htf'?(htf[g.symbol]?(htf[g.symbol].bull?1:0):-1):sortK==='risk'?riskOf(g.symbol):g[sortK];
   const W=tab==='w',wn=Math.max(1,+$('wn').value||4),wo=$('wonly').checked,mv=(+$('fv').value||0)*1e6;
@@ -653,20 +792,21 @@ function renderRows(){
 function select(s){sel=s;renderRows();centerChip();syncMulti();loadChart()}
 function centerChip(){const c=$('chips'),b=c.querySelector('.chip.sel');if(b)c.scrollTo({left:b.offsetLeft-(c.clientWidth-b.offsetWidth)/2,behavior:'smooth'})}
 
-const ALP={'1min':'1Min','5min':'5Min','15min':'15Min','30min':'30Min','1hour':'1Hour','4hour':'4Hour','eod':'1Day'};
-const DAYS={'1min':3,'5min':10,'15min':30,'30min':30,'1hour':90,'4hour':365,'eod':730};
+const ALP={'1min':'1Min','5min':'5Min','15min':'15Min','30min':'30Min','1hour':'1Hour','2hour':'2Hour','4hour':'4Hour','eod':'1Day'};
+const DAYS={'1min':3,'5min':10,'15min':30,'30min':30,'1hour':90,'2hour':60,'4hour':365,'eod':730};
 const akey=()=>$('akey').value.trim(),asec=()=>$('asec').value.trim();
 const AH=()=>({'APCA-API-KEY-ID':akey(),'APCA-API-SECRET-KEY':asec()});
 const etFmt=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
 function etSec(ms){const p=Object.fromEntries(etFmt.formatToParts(ms).map(x=>[x.type,x.value]));return Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute,+p.second)/1000}
 
 async function alpacaBars(sym,t){
-  const span=t==='eod'?730:Math.max(1,+$('days').value||3)*2+5;const start=new Date(Date.now()-span*864e5).toISOString();
-  const u='https://data.alpaca.markets/v2/stocks/'+encodeURIComponent(sym)+'/bars?'+new URLSearchParams({timeframe:ALP[t],start,limit:10000,adjustment:'split',feed:'iex',sort:'desc'});
+  const span=t==='eod'?730:t==='2hour'?450:Math.max(1,+$('days').value||3)*2+5;const start=new Date(Date.now()-span*864e5).toISOString();
+  const u='https://data.alpaca.markets/v2/stocks/'+encodeURIComponent(sym)+'/bars?'+new URLSearchParams({timeframe:ALP[t==='2hour'?'30min':t],start,limit:10000,adjustment:'split',feed:'iex',sort:'desc'});
   const r=await fetch(u,{headers:AH()});
   const d=await r.json().catch(()=>null);
   if(!r.ok)throw new Error('HTTP '+r.status+(d&&d.message?' '+d.message:''));
-  return (d.bars||[]).slice().reverse().map(b=>({time:t==='eod'?b.t.slice(0,10):etSec(Date.parse(b.t)),open:b.o,high:b.h,low:b.l,close:b.c,volume:b.v}));
+  const rows=(d.bars||[]).slice().reverse().map(b=>({time:t==='eod'?b.t.slice(0,10):etSec(Date.parse(b.t)),open:b.o,high:b.h,low:b.l,close:b.c,volume:b.v}));
+  return t==='2hour'?agg2h(rows):rows;
 }
 async function fmpBars(sym,t){
   const raw=t==='eod'?await api('historical-price-eod/full',{symbol:sym}):await api('historical-chart/'+t,{symbol:sym});
@@ -692,7 +832,7 @@ function keepDays(b,t){
 async function getBars(sym,t){
   const srcs=[];
   if(akey()&&asec())srcs.push(['Alpaca',()=>alpacaBars(sym,t)]);
-  if(key())srcs.push(['FMP',()=>fmpBars(sym,t)]);
+  if(key()&&t!=='2hour')srcs.push(['FMP',()=>fmpBars(sym,t)]);
   const errs=[];
   for(const [n,f] of srcs){
     try{const b=clean(await f());if(b.length)return{bars:b,src:n,errs};errs.push(n+': no data')}
@@ -734,6 +874,7 @@ async function loadRvol(force=false){
 // scan: EMA13 vs AVWAP for every gainer on the current timeframe (needs Alpaca keys)
 const trend={};let trendReady=false,trendRun=0;
 async function loadTrend(force=false){
+  if(tab==='v'){renderRows();return}
   const run=++trendRun,t=tf;
   const base=scanSymbols();if(!(akey()&&asec())||!base.length){renderRows();return}
   if(force)for(const k in trendAt)delete trendAt[k];
@@ -778,6 +919,7 @@ async function loadChart(){
   if(my!==loadId)return;
   const fk=sel+':'+tf+':'+$('days').value,fit=main.fk!==fk;main.fk=fk;
   main.setKey(sel);main.setBars(bars,fit);
+  if(bars.length&&tab==='v'&&main.vd){const q=main.vd.sq[main.vd.sq.length-1];$('cinfo').insertAdjacentHTML('beforeend',` <span class="${q>0?'up':q<0?'down':''}">${q>0?'LONG':q<0?'SHORT':'–'} regime · 2H</span>`)}
   if(bars.length){$('cmsg').textContent='';status(`${sel}: ${bars.length} bars (${src})`);return}
   let m='No chart data. '+errs.join(' | ');
   if(errs.some(e=>e.includes('402')))m+='\nFMP plan does not include this symbol. Add Alpaca keys above to chart any ticker.';
@@ -837,19 +979,24 @@ $('days').onchange=()=>{store.set('days',$('days').value);if(tab==='m')loadMulti
 $('tc').onchange=()=>{trendCandles=$('tc').checked;PANES.forEach(p=>p.recolor())};
 $('sig').onchange=()=>{showSig=$('sig').checked;PANES.forEach(p=>p.markCross())};
 $('shade').onchange=()=>{showDays=$('shade').checked;PANES.forEach(p=>p.sig='')};
-$('ind').onchange=()=>{showInd=$('ind').checked;PANES.forEach(p=>p.setInd())};
+const setIndVis=v=>{showInd=v;$('ind').checked=v;$('vind').checked=v;PANES.forEach(p=>p.setInd())};
+$('ind').onchange=()=>setIndVis($('ind').checked);$('vind').onchange=()=>setIndVis($('vind').checked);
 
 // ---------- multi-chart tab ----------
 let tab='g',msyms=[],cells={};
 try{msyms=JSON.parse(store.get('multi')||'[]')}catch{}
 TFS.forEach(([l,v])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v==='eod')o.selected=true;$('mtf').appendChild(o)});
+let prevTf='15min';
 function showTab(t){
+  // VAFT tab is fixed to 2h candles; the previous timeframe is restored when leaving it
+  if(t==='v'){if(tf!=='2hour')prevTf=tf;tf='2hour'}else if(tf==='2hour')tf=prevTf;
+  main.mode=t==='v'?'vaft':'std';markTf();$('tfs').hidden=t==='v';
   tab=t;$('mainview').hidden=t==='m';$('multi').hidden=t!=='m';
-  $('tabG').classList.toggle('on',t==='g');$('tabM').classList.toggle('on',t==='m');$('tabW').classList.toggle('on',t==='w');
-  $('gonly').hidden=t==='w';$('wctl').hidden=t!=='w';$('wsecbar').hidden=t!=='w';['thc','thb','thh','thg','thk','thx'].forEach(i=>$(i).hidden=t!=='w');$('thp').hidden=t==='w';$('mainview').classList.toggle('w',t==='w');$('mainview').classList.toggle('wc',t==='w'&&compactView);lastOrder='';if(t==='w'){sortK='chg';sortDir=-1}else if(t==='g'){sortK='changesPercentage';sortDir=-1}
+  $('tabG').classList.toggle('on',t==='g');$('tabM').classList.toggle('on',t==='m');$('tabW').classList.toggle('on',t==='w');$('tabV').classList.toggle('on',t==='v');
+  $('gonly').hidden=t!=='g';$('gflt').hidden=t==='v';$('wctl').hidden=t!=='w';$('vctl').hidden=t!=='v';$('wsecbar').hidden=t!=='w';['thc','thb','thh','thg','thk'].forEach(i=>$(i).hidden=t!=='w');$('thx').hidden=t!=='w'&&t!=='v';$('thp').hidden=t==='w'||t==='v';$('mainview').classList.toggle('w',t==='w'||t==='v');$('mainview').classList.toggle('v',t==='v');$('mainview').classList.toggle('wc',t==='w'&&compactView);lastOrder='';if(t==='w'){sortK='chg';sortDir=-1}else if(t==='g'){sortK='changesPercentage';sortDir=-1}else if(t==='v'){if($('vsrc').value==='g'){sortK='chg';sortDir=-1}else{sortK='vbars';sortDir=1}}
   if(t==='m')buildMulti();
   else{
-    if(t==='w'){if(WLS.length&&!WLS.includes(sel))sel=WLS[0]}else if(gainers.length&&!gainers.some(g=>g.symbol===sel))sel=gainers[0].symbol;
+    if(t==='w'||t==='v'){if(WLS.length&&!WLS.includes(sel))sel=WLS[0]}else if(gainers.length&&!gainers.some(g=>g.symbol===sel))sel=gainers[0].symbol;
     if(sel)select(sel);else renderRows();
     loadTrend();if(t==='w'){loadSectors();loadM30()}
   }
@@ -895,7 +1042,7 @@ $('wedit').onclick=()=>{
   if(!WLS.includes(sel))sel=WLS[0];
   select(sel);loadTrend(true);loadSectors();loadM30(true);
 };
-$('tabG').onclick=()=>showTab('g');$('tabW').onclick=()=>showTab('w');$('tabM').onclick=()=>showTab('m');
+$('tabG').onclick=()=>showTab('g');$('tabW').onclick=()=>showTab('w');$('tabV').onclick=()=>showTab('v');$('tabM').onclick=()=>showTab('m');
 $('madd').onclick=addSym;$('msym').onkeydown=e=>{if(e.key==='Enter')addSym()};
 $('mtf').onchange=loadMulti;$('mcols').onchange=buildMulti;$('mrefresh').onclick=loadMulti;
 function syncMulti(){
@@ -913,6 +1060,78 @@ function toggleMulti(){
   store.set('multi',JSON.stringify(msyms));syncMulti();
 }
 $('addm').onclick=toggleMulti;$('addm2').onclick=toggleMulti;syncMulti();
+
+// ---------- VAFT 2H tab: scan the watchlist on 2h bars, list symbols with a LONG/SHORT signal within N bars ----------
+// 2h bars on the regular US session like TradingView: 9:30-11:30, 11:30-13:30, 13:30-15:30, 15:30-16:00 ET (built from 30m bars; pre/after-hours dropped)
+function agg2h(list){
+  const out=[];let cur=null,ck=null;
+  for(const b of clean(list)){
+    const m=Math.floor(b.time%86400/60);
+    if(m<570||m>=960)continue;
+    const k=Math.floor(b.time/86400)*86400+(m<690?570:m<810?690:m<930?810:930)*60;
+    if(k!==ck){cur={time:k,open:b.open,high:b.high,low:b.low,close:b.close,volume:b.volume};ck=k;out.push(cur)}
+    else{cur.high=Math.max(cur.high,b.high);cur.low=Math.min(cur.low,b.low);cur.close=b.close;cur.volume+=b.volume}
+  }
+  return out;
+}
+// symbols the VAFT tab works on: the watchlist, or today's top gainers (candidates to short once they roll over)
+const vSyms=()=>$('vsrc').value==='g'?gainers.filter(g=>g.symbol&&g.price>=1).sort((a,b)=>chgOf(b)-chgOf(a)).slice(0,60).map(g=>g.symbol):WLS;
+const vst={},vAt={};let vReady=false,vBusy=false,vRun=0;
+// manual only: runs when the Scan button is pressed (nothing in this tab scans on its own)
+async function loadV(force=false){
+  if(tab!=='v')return;
+  if($('vsrc').value==='g'&&!gainers.length){status('No gainers loaded yet: add the FMP key and press Refresh.');renderRows();return}
+  if(!(akey()&&asec())||!vSyms().length){renderRows();return}
+  if(force)for(const k in vAt)delete vAt[k];
+  const run=++vRun,syms=vSyms().filter(x=>stale(vAt,x,5*60e3));
+  if(!syms.length){vReady=true;vBusy=false;renderRows();return}
+  vBusy=true;vReady=false;renderRows();
+  try{
+    const all=await fetchMulti(syms,'30min',DAYS['2hour']);
+    if(run!==vRun)return;
+    for(const x of syms){
+      const bars=agg2h((all[x]||[]).map(b=>({time:etSec(Date.parse(b.t)),open:b.o,high:b.h,low:b.l,close:b.c,volume:b.v})));
+      vAt[x]=Date.now();
+      if(bars.length<40){vst[x]=null;continue}
+      const V=vaft(bars),n=bars.length-1,sg=V.sig[V.sig.length-1],t=V.trend[n];
+      vst[x]={dir:V.sq[n],ago:sg?n-sg.i:null,last:bars[n].close,gap:t?(bars[n].close/t-1)*100:null};
+    }
+    vReady=true;vBusy=false;renderRows();status('VAFT scan done '+new Date().toLocaleTimeString());
+  }catch(e){vBusy=false;renderRows();status('VAFT scan error: '+e.message)}
+}
+function renderV(){
+  const haveA=!!(akey()&&asec()),N=Math.max(1,+$('vn').value||4),sd=$('vside').value,only=$('vonly').checked;
+  const vs=vSyms(),gsrc=$('vsrc').value==='g',gm=new Map(gainers.map(g=>[g.symbol,g])),all=vs.filter(s=>!HIDS.has(s)),nh=vs.filter(s=>HIDS.has(s)).length;
+  const ub=$('vunhide');ub.hidden=!nh;ub.textContent='Show hidden ('+nh+')';
+  let list=all.map(s=>({s,v:vst[s]})).filter(o=>{
+    if(!only||!haveA||!vReady)return true;
+    const v=o.v;if(!v||v.ago==null||v.ago>=N)return false;
+    return sd==='both'||(sd==='long'?v.dir===1:v.dir===-1);
+  });
+  const key=o=>sortK==='symbol'?o.s:sortK==='chg'?(gm.get(o.s)?chgOf(gm.get(o.s)):-999):sortK==='vsig'?(o.v?o.v.dir:-2):sortK==='vgap'?(o.v&&o.v.gap!=null?o.v.gap:-999):(o.v&&o.v.ago!=null?o.v.ago:999);
+  list.sort((a,b)=>{const x=key(a),y=key(b),r=typeof x==='string'?sortDir*x.localeCompare(y):sortDir*(x-y);return r||a.s.localeCompare(b.s)});
+  $('rows').innerHTML=list.map(o=>{
+    const v=o.v,d=v?v.dir:0,ago=v&&v.ago!=null?v.ago:null,gp=v&&v.gap!=null?(v.gap>=0?'+':'')+v.gap.toFixed(1)+'%':'–';
+    return `<tr class="row${o.s===sel?' sel':''}" data-s="${o.s}"><td><span class="sym">${o.s}</span>${gsrc&&gm.get(o.s)?` <small class="up">${chgCell(gm.get(o.s))}</small>`:''}</td><td class="xc"><button class="xb" data-x="${o.s}" title="Hide ${o.s}" aria-label="Hide ${o.s}">✕</button></td></tr>`;
+  }).join('')||`<tr><td colspan="2" class="msg">${haveA?(vBusy?'Scanning 2H…':vReady?'No signals within '+N+' bars.':'Press Scan to look for signals.'):'Add Alpaca keys to scan.'}</td></tr>`;
+  const cs=$('chips'),cl=cs.scrollLeft;
+  cs.innerHTML=list.map(o=>`<button class="chip${o.s===sel?' sel':''}" data-s="${o.s}">${o.s}${o.v&&o.v.ago!=null?` <small>${o.v.dir>0?'▲':'▼'}${o.v.ago}</small>`:''}</button>`).join('')||'<span class="mi">No hits</span>';
+  cs.scrollLeft=cl;
+  $('flt-note').textContent=!haveA?'VAFT needs Alpaca keys':(vBusy?'Scanning 2H…':vReady?`${list.length}/${all.length} shown`:'Not scanned: press Scan');
+}
+['vside','vonly','vn'].forEach(i=>$(i).oninput=renderRows);
+$('vscan').onclick=()=>loadV(true);
+$('vsrc').onchange=()=>{vReady=false;if($('vsrc').value==='g'){sortK='chg';sortDir=-1}else{sortK='vbars';sortDir=1}if($('vsrc').value==='g')$('vside').value='short';lastOrder='';renderRows();if($('vsrc').value==='g'&&!gainers.length)status('Top gainers need the FMP key: add it in Settings and press Refresh.')};
+// per-element show/hide for the VAFT indicator
+const VE_ITEMS=[['trend','Trend line'],['bands','Upper / lower bands'],['fill','Band fill'],['sig','VAFT LONG / SHORT arrows'],['clines','Cloud lines (EMA / MagicTrend)'],['cfill','Cloud fill'],['csig','Cloud cross signals']];
+$('vpanel').innerHTML=VE_ITEMS.map(([k,l])=>`<label><input type="checkbox" data-ve="${k}"${VE[k]?' checked':''}> ${l}</label>`).join('')+'<small style="display:block;padding:4px 2px">Cloud items need "Cloud cross overlay" on.</small>';
+const posV=()=>{const r=$('velm').getBoundingClientRect(),p=$('vpanel');p.style.top=(r.bottom+4)+'px';p.style.left=Math.max(8,Math.min(r.left,innerWidth-p.offsetWidth-8))+'px'};
+$('velm').onclick=e=>{e.stopPropagation();const p=$('vpanel');p.hidden=!p.hidden;if(!p.hidden)posV()};
+$('vpanel').onclick=e=>{e.stopPropagation();const k=e.target.dataset.ve;if(!k)return;VE[k]=e.target.checked?1:0;store.set('vElm',JSON.stringify(VE));PANES.forEach(p=>{p.visAll();if(p.vd)p.markV();p.sig=''})};
+$('vcand').onchange=()=>{vCand=$('vcand').value;PANES.forEach(p=>p.recolor())};
+$('vcloud').onchange=()=>{vCloud=$('vcloud').checked;PANES.forEach(p=>{p.setInd();if(p.vd){p.markV();}})};
+$('vedit').onclick=()=>$('wedit').onclick();
+$('vunhide').onclick=()=>{vSyms().forEach(s=>HIDS.delete(s));saveHid();lastOrder='';renderRows()};
 
 // events
 $('rows').onclick=e=>{
@@ -933,15 +1152,15 @@ $('secpanel').onclick=e=>{e.stopPropagation();
   if(a){const ks=[...new Set(WLS.map(secOf))];HIDSEC=a==='all'?new Set():new Set(ks);saveHid();lastOrder='';renderRows();posSec();return}
   const k=e.target.dataset.sec;if(k===undefined)return;
   e.target.checked?HIDSEC.delete(k):HIDSEC.add(k);saveHid();lastOrder='';renderRows()};
-document.addEventListener('click',()=>{$('secpanel').hidden=true});
+document.addEventListener('click',()=>{$('secpanel').hidden=true;$('vpanel').hidden=true});
 document.querySelector('thead').onclick=e=>{
   const k=e.target.dataset.k;if(!k)return;
   sortDir=sortK===k?-sortDir:-1;sortK=k;renderRows();
 };
 $('exch').onchange=renderRows;['fon','fp','fr','fv','fb','fbuy','fbn','wonly','wn','wg','wgrp'].forEach(i=>$(i).oninput=renderRows);
-$('refresh').onclick=()=>{if(tab==='m')loadMulti();else if(tab==='w'){key()?loadGainers(true):loadTrend(true);if(sel)loadChart()}else{loadGainers(true);if(sel)loadChart()}};
+$('refresh').onclick=()=>{if(tab==='m')loadMulti();else if(tab==='v'){if($('vsrc').value==='g'&&key())loadGainers(true);if(sel)loadChart()}else if(tab==='w'){key()?loadGainers(true):loadTrend(true);if(sel)loadChart()}else{loadGainers(true);if(sel)loadChart()}};
 $('save').onclick=()=>{store.set('fmpKey',key());store.set('alpKey',akey());store.set('alpSec',asec());document.querySelector('header').classList.remove('open');loadGainers(true);if(sel)loadChart()};
-function schedule(){clearInterval(timer);if($('auto').checked)timer=setInterval(()=>{if(document.hidden)return;if(tab==='m')loadMulti();else if(tab==='w'){key()?loadGainers():loadTrend();if(sel)loadChart()}else{loadGainers();if(sel)loadChart()}},60000)}
+function schedule(){clearInterval(timer);if($('auto').checked)timer=setInterval(()=>{if(document.hidden)return;if(tab==='m')loadMulti();else if(tab==='v'){if(sel)loadChart()}else if(tab==='w'){key()?loadGainers():loadTrend();if(sel)loadChart()}else{loadGainers();if(sel)loadChart()}},60000)}
 $('auto').onchange=schedule;schedule();
 if(!key())document.querySelector('header').classList.add('open');
 loadGainers();
